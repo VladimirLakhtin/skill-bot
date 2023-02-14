@@ -1,4 +1,4 @@
-
+#Проверка данных имени на ввод
 def cheak_input_text(name, key):
         layout = dict(zip(map(ord, "qwertyuiop[]asdfghjkl;'zxcvbnm,./`"
                                    'QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?~'),
@@ -21,3 +21,4 @@ def cheak_input_text(name, key):
             list_exept_sym = "|".join(list_exept_sym)
             text = f"В {key} не должены стоять символы: {list_exept_sym}"
             return text, "bad"
+#TODO: тоже самое надо добавить для тг id
