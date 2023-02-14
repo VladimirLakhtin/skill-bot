@@ -5,10 +5,11 @@ from state import FSMAdmin, FSMContext
 
 import func_bot
 
-
+#Главное меню админа
 async def start_handler(message):
     await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}", reply_markup=keyboard.kb_main_inline)
 
+#Выход в главное меню админа
 async def back_inline_menu_main(call, state:FSMContext):
     await state.finish()
     await bot.edit_message_text(
@@ -18,12 +19,14 @@ async def back_inline_menu_main(call, state:FSMContext):
         reply_markup=keyboard.kb_main_inline)
 
 
-
-
+#Меню редавктирования
 async def edit_handler(call):
     await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
 
-#Редактирование
+    
+
+ 
+#Редактирование и получения списка студентов или кураторов
 async def edit_handler_student_teacher(call, state:FSMContext):
     my_key, rus_name, flag, prefix = ['student', 'студенты', True, 'std'] if call.data == 'student_2' else ['teacher', 'учителя', False, 'tch']
     records = func_bot.name_list_db_student_and_teacher(key=my_key)[0]
@@ -36,11 +39,13 @@ async def edit_handler_student_teacher(call, state:FSMContext):
     async with state.proxy() as data:
         data["key_student_call"] = flag
 
+#Выход в меню редактирования
 async def back_menu_student_teacher(call, state:FSMContext):
     await state.finish()
     await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
 
 #TODO: объединить
+#Общая информация о студенте и действия удалить или назад
 async def edit_handler_message_student(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_call"]
@@ -53,6 +58,8 @@ async def edit_handler_message_student(call, state:FSMContext):
         async with state.proxy() as data:
             data["id_student"] = func_bot.info_list(call.data[-1],key="student")[1]
 
+            
+#Общая информация о кураторе и действия удалить или назад
 async def edit_handler_message_teacher(call, state: FSMContext):
     await bot.edit_message_text(
         text=func_bot.info_list(call.data[-1], key="teacher")[0],
@@ -62,7 +69,7 @@ async def edit_handler_message_teacher(call, state: FSMContext):
     async with state.proxy() as data:
         data["id_teacher"] = func_bot.info_list(call.data[-1], key="teacher")[1]
 
-
+#Удаление куратора или студента из бд
 async def back_and_del_student_handler(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_call"]
@@ -79,14 +86,15 @@ async def back_and_del_student_handler(call, state:FSMContext):
         chat_id=call.message.chat.id,
         reply_markup=ikb)
 
-
+#Вход в меню поиска
 async def search_handler(call):
     await bot.edit_message_text(
         text=f"Кого ищем?",
         message_id=call.message.message_id,
         chat_id=call.message.chat.id,
         reply_markup=keyboard.student_and_teacher_search)
-
+    
+#Ожидаем call данных от пользователя и добавляем ключ студента и входим в состояния
 async def search_student_teacher_handler(call, state:FSMContext):
     key_student_search, rus_text = [True, "студента"] if call.data == "student_search" else [False, "куратора"]
     await bot.edit_message_text(
@@ -99,6 +107,7 @@ async def search_student_teacher_handler(call, state:FSMContext):
         data["chat_search_id"] = call.message.chat.id
     await FSMAdmin.search_name_state.set()
 
+#Принимаем данные message_text и обрабатываем функцию с вероятностью получая клавиатуру студентов или кураторов которые нашлись
 async def search_info_list_student_teacher(message, state:FSMContext):
     async with state.proxy() as data:
         key_student_search = data["key_student_search"]
@@ -120,7 +129,7 @@ async def search_info_list_student_teacher(message, state:FSMContext):
         async with state.proxy() as data:
             data["key_student_search"] = key_student_search
 
-
+#Берём данные по нашедшему студенту нажав на кнопку
 async def search_info_student(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_search"]
@@ -134,7 +143,7 @@ async def search_info_student(call, state:FSMContext):
             data["id_student_search"] = func_bot.info_list(call.data[-1], key="student")[1]
 
 
-
+#Берём данные по нашедшему куратору нажав на кнопку
 async def search_info_teacher(call, state:FSMContext):
         await bot.edit_message_text(
             text=func_bot.info_list(call.data[-1], key="teacher")[0],
@@ -144,7 +153,8 @@ async def search_info_teacher(call, state:FSMContext):
         async with state.proxy() as data:
             data["id_teacher_search"] = func_bot.info_list(call.data[-1], key="teacher")[1]
 
-
+#Удаляем студента или куратора или же выходим на главное меню
+#TODO: Буду доробатывать хочу сделать просто откат на хендлере что бы мог искать сколько угодно а не один раз
 async def del_search_student_teacher(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_search"]
@@ -156,7 +166,7 @@ async def del_search_student_teacher(call, state:FSMContext):
     await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
 
 
-
+#Всё устал писать я спать коменты)
 
 
 #Добавление
