@@ -12,3 +12,4 @@ class FSMAdmin(StatesGroup):
     state_add_type_profession = State()
     accept_or_reject_type = State()
 
+    search_name_state = State()
