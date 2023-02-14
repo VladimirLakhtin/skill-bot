@@ -6,3 +6,4 @@ TOKEN_BOT = None
 storage = MemoryStorage()
 bot = Bot(token=TOKEN_BOT)
 dp = Dispatcher(bot, storage=storage)
+
