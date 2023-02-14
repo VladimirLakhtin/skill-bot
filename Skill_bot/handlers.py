@@ -1,31 +1,30 @@
 import data_checking
-import func_bot
 import keyboard
-import state
 from create_bot import bot
 from state import FSMAdmin, FSMContext
-from aiogram.types import InlineKeyboardMarkup
-from data_checking import cheak_input_text
+
 import func_bot
 
 
 async def start_handler(message):
     await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}", reply_markup=keyboard.kb_main_inline)
 
-
-async def edit_handler(call):
-    await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
-
 async def back_inline_menu_main(call, state:FSMContext):
     await state.finish()
     await bot.edit_message_text(
-        text=f"Добро пожаловать в главное мню{call.message.from_user.first_name}",
+        text=f"Добро пожаловать в главное мнею {call.message.from_user.first_name}",
         message_id=call.message.message_id,
         chat_id=call.message.chat.id,
         reply_markup=keyboard.kb_main_inline)
 
+
+
+
+async def edit_handler(call):
+    await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
+
 #Редактирование
-async def edit_handler_student(call, state:FSMContext):
+async def edit_handler_student_teacher(call, state:FSMContext):
     my_key, rus_name, flag, prefix = ['student', 'студенты', True, 'std'] if call.data == 'student_2' else ['teacher', 'учителя', False, 'tch']
     records = func_bot.name_list_db_student_and_teacher(key=my_key)[0]
     ikb = keyboard.create_ikb(records, prefix)
@@ -37,8 +36,8 @@ async def edit_handler_student(call, state:FSMContext):
     async with state.proxy() as data:
         data["key_student_call"] = flag
 
-
-async def back_menu_student_teacher(call):
+async def back_menu_student_teacher(call, state:FSMContext):
+    await state.finish()
     await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
 
 #TODO: объединить
@@ -64,7 +63,7 @@ async def edit_handler_message_teacher(call, state: FSMContext):
         data["id_teacher"] = func_bot.info_list(call.data[-1], key="teacher")[1]
 
 
-async def bak_and_del_student_handler(call, state:FSMContext):
+async def back_and_del_student_handler(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_call"]
     name, rus_name, prefix = ['student', 'студенты', 'std'] if key else ['teacher', 'кураторы', 'tch']
@@ -79,6 +78,85 @@ async def bak_and_del_student_handler(call, state:FSMContext):
         message_id=call.message.message_id,
         chat_id=call.message.chat.id,
         reply_markup=ikb)
+
+
+async def search_handler(call):
+    await bot.edit_message_text(
+        text=f"Кого ищем?",
+        message_id=call.message.message_id,
+        chat_id=call.message.chat.id,
+        reply_markup=keyboard.student_and_teacher_search)
+
+async def search_student_teacher_handler(call, state:FSMContext):
+    key_student_search, rus_text = [True, "студента"] if call.data == "student_search" else [False, "куратора"]
+    await bot.edit_message_text(
+        text=f"Введите имя {rus_text} которого хотите найти",
+        message_id=call.message.message_id,
+        chat_id=call.message.chat.id)
+    async with state.proxy() as data:
+        data["key_student_search"] = key_student_search
+        data["message_search_id"] = call.message.message_id
+        data["chat_search_id"] = call.message.chat.id
+    await FSMAdmin.search_name_state.set()
+
+async def search_info_list_student_teacher(message, state:FSMContext):
+    async with state.proxy() as data:
+        key_student_search = data["key_student_search"]
+        message_id = data["message_search_id"]
+        chat_id = data["chat_search_id"]
+        if key_student_search:
+            records = func_bot.search_db_student_teacher(key="student", name=message.text)
+        else:
+            records = func_bot.search_db_student_teacher(key="teacher", name=message.text)
+        posfix, rus_text = ["schs", "студентов"] if key_student_search else ["scht", "кураторов"]
+        ikb = keyboard.create_ikb(records, posfix)
+        await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
+        await state.finish()
+        await bot.edit_message_text(
+            text=f"Все {rus_text} имена которые совпали с вашим запросом",
+            message_id=message_id,
+            chat_id=chat_id,
+            reply_markup=ikb)
+        async with state.proxy() as data:
+            data["key_student_search"] = key_student_search
+
+
+async def search_info_student(call, state:FSMContext):
+    async with state.proxy() as data:
+        key = data["key_student_search"]
+    if key:
+        await bot.edit_message_text(
+            text=func_bot.info_list(call.data[-1], key="student")[0],
+            message_id=call.message.message_id,
+            chat_id=call.message.chat.id,
+            reply_markup=keyboard.butt_back_and_del_search)
+        async with state.proxy() as data:
+            data["id_student_search"] = func_bot.info_list(call.data[-1], key="student")[1]
+
+
+
+async def search_info_teacher(call, state:FSMContext):
+        await bot.edit_message_text(
+            text=func_bot.info_list(call.data[-1], key="teacher")[0],
+            message_id=call.message.message_id,
+            chat_id=call.message.chat.id,
+            reply_markup=keyboard.butt_back_and_del_search)
+        async with state.proxy() as data:
+            data["id_teacher_search"] = func_bot.info_list(call.data[-1], key="teacher")[1]
+
+
+async def del_search_student_teacher(call, state:FSMContext):
+    async with state.proxy() as data:
+        key = data["key_student_search"]
+    name, rus_name, prefix = ['student', 'студенты', 'std'] if key else ['teacher', 'кураторы', 'tch']
+    if call.data == "del_search":
+        async with state.proxy() as data:
+            id_student = data['id_' + name + "_search"]
+        func_bot.removing_student(id_student)
+    await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
+
+
+
 
 
 #Добавление
@@ -134,35 +212,34 @@ async def add_name_student_or_teacher_handler(message, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
         list_type = [i[1] for i in func_bot.db("Type_and_articul")]
-        ikb = keyboard.ikb(list_type, 'type')
-        staus = data_checking.cheak_input_text(message.text, key="имени")
+        ikb = keyboard.create_ikb(list_type, 'type')
+        status = data_checking.cheak_input_text(message.text, key="имени")
     postfix, mini_text = ['std', 'профессию студента'] if key_student else ['tch', 'направления куратора']
     async with state.proxy() as data:
-        data["name_" + postfix] = staus[-1]
+        data["name_" + postfix] = status[-1]
         chat_id = data["chat_id_" + postfix]
         message_id = data["message_id_" + postfix]
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
-    if staus[1] == "ok":
+    if status[1] == "ok":
         await bot.edit_message_text(text=f"Хорошо, теперь выбери {mini_text}", message_id=message_id, chat_id=chat_id, reply_markup=ikb)
         await FSMAdmin.next()
         await FSMAdmin.next()
-    elif staus[1] == "normal":
-        await bot.edit_message_text(text=staus[0], message_id=message_id, chat_id=chat_id, reply_markup=keyboard.yes_and_no)
+    elif status[1] == "normal":
+        await bot.edit_message_text(text=status[0], message_id=message_id, chat_id=chat_id, reply_markup=keyboard.yes_and_no)
         await FSMAdmin.next()
     else:
-        await bot.edit_message_text(text=staus[0], message_id=message_id, chat_id=chat_id, reply_markup=keyboard.back_inline_menu_butt)
+        await bot.edit_message_text(text=status[0], message_id=message_id, chat_id=chat_id, reply_markup=keyboard.back_inline_menu_butt)
         await FSMAdmin.state_add_name.set()
 
 
 async def yes_and_no_handler(call, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
-        inline_type_butt = InlineKeyboardMarkup()
         list_type = [i[1] for i in func_bot.db("Type_and_articul")]
-        keyboard.inline_type(list_type, inline_type_butt)
+        ikb = keyboard.create_ikb(list_type, 'type')
     rus_name = 'студента' if key_student else 'куратора'
     if call.data == "yes":
-        await bot.edit_message_text(text=f"Хорошо, теперь выбери профессию {rus_name}", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=inline_type_butt)
+        await bot.edit_message_text(text=f"Хорошо, теперь выбери профессию {rus_name}", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=ikb)
         await FSMAdmin.next()
     else:
         await bot.edit_message_text(text=f"Введите имя {rus_name}", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.back_inline_menu_butt)
@@ -187,23 +264,22 @@ async def add_tg_name_student_or_teacher_handler(message, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
     postfix, rus_name = ['std', 'Студент'] if key_student else ['tch', 'Куратор']
-    if key_student:
-        async with state.proxy() as data:
-            name = data["name_" + postfix]
-            prof = data["type_" + postfix]
-            articul = data["articul_" + postfix]
-            data["tg_id_" + postfix] = message.text
-            message_id_call = data["call_message_id_" + postfix]
-            chat_id_call = data["call_chat_id_" + postfix]
-        await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
-        await bot.edit_message_text(text=f"Информация о введённых данных\n\nС{rus_name} - {name}\n\nГруппа - {prof}\nАртикул группы - {articul}\nТГ ник - {message.text}", chat_id=chat_id_call, message_id=message_id_call, reply_markup=keyboard.accept_and_reject)
-        await FSMAdmin.next()
+    async with state.proxy() as data:
+        name = data["name_" + postfix]
+        prof = data["type_" + postfix]
+        articul = data["articul_" + postfix]
+        data["tg_id_" + postfix] = message.text
+        message_id_call = data["call_message_id_" + postfix]
+        chat_id_call = data["call_chat_id_" + postfix]
+    await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
+    await bot.edit_message_text(text=f"Информация о введённых данных\n\n {rus_name} - {name}\n\nГруппа - {prof}\nАртикул группы - {articul}\nТГ ник - {message.text}", chat_id=chat_id_call, message_id=message_id_call, reply_markup=keyboard.accept_and_reject)
+    await FSMAdmin.next()
 
 
 async def accept_or_reject_add_student_or_teacher_handler(call, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
-    postfix, rusname = ['std', 'Студент'] if key_student else ['tch', 'Куратор']
+    postfix, rus_name = ['std', 'Студент'] if key_student else ['tch', 'Куратор']
     if call.data == "accept":
         async with state.proxy() as data:
             name = data["name_" + postfix]
@@ -218,16 +294,27 @@ async def accept_or_reject_add_student_or_teacher_handler(call, state:FSMContext
     await state.finish()
 
 
+
 def register_handler(dp):
     dp.register_message_handler(start_handler, commands=["start"])
     dp.register_callback_query_handler(back_inline_menu_main, lambda callback: callback.data == "back_main_menu", state=None)
 
+    #Редактирование студентов и кураторов
     dp.register_callback_query_handler(edit_handler, lambda callback: callback.data == "edit", state=None)
     dp.register_callback_query_handler(back_menu_student_teacher, lambda callback: callback.data == "back_menu_edit", state=None)
-    dp.register_callback_query_handler(edit_handler_student, lambda callback: callback.data in ["student_2", "teacher_2"], state=None)
+    dp.register_callback_query_handler(edit_handler_student_teacher, lambda callback: callback.data in ["student_2", "teacher_2"], state=None)
     dp.register_callback_query_handler(edit_handler_message_student, lambda callback: callback.data.startswith('std'), state=None)
     dp.register_callback_query_handler(edit_handler_message_teacher, lambda callback: callback.data.startswith('tch'), state=None)
-    dp.register_callback_query_handler(bak_and_del_student_handler, lambda callback: callback.data in ["back", "del"], state=None)
+    dp.register_callback_query_handler(back_and_del_student_handler, lambda callback: callback.data in ["back", "del"], state=None)
+
+    #Поиск студентов
+    dp.register_callback_query_handler(search_handler, lambda callback: callback.data == "search", state=None)
+    dp.register_callback_query_handler(search_student_teacher_handler, lambda callback: callback.data in ["teacher_search", "student_search"])
+    dp.register_message_handler(search_info_list_student_teacher, lambda message: message.text, state=FSMAdmin.search_name_state)
+    dp.register_callback_query_handler(search_info_student, lambda callback: callback.data.startswith("schs"),state=None)
+    dp.register_callback_query_handler(search_info_teacher, lambda callback: callback.data.startswith("scht"),state=None)
+    dp.register_callback_query_handler(del_search_student_teacher, lambda callback: callback.data in ["back_menu_edit", "del_search"], state=None)
+
 
     #Добавление
     dp.register_callback_query_handler(add_handler, lambda callback: callback.data in ["add", "back_menu"], state="*")
