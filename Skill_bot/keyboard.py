@@ -1,17 +1,16 @@
 from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup,  InlineKeyboardButton, KeyboardButton
 
 # Кнопки админа
-kb_main_inline = InlineKeyboardMarkup(inline_keyboard=[
+ka_main = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Добавить", callback_data="add"), InlineKeyboardButton("Обновить логи", callback_data="update"), InlineKeyboardButton("Редактировать", callback_data="edit")],
     [InlineKeyboardButton("Получить файл бд", callback_data="file_db")],
 ])
+
 # Назад и Удалить
 butt_back_and_del_search = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Удалить", callback_data="del_search")],
     [InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit")]
 ])
-
-
 
 # Назад и Удалить
 butt_back_and_del_prod = InlineKeyboardMarkup(inline_keyboard=[

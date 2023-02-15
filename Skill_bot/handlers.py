@@ -1,32 +1,41 @@
 import data_checking
 import keyboard
-from create_bot import bot
+from create_bot import bot, dp
 from state import FSMAdmin, FSMContext
 
 import func_bot
 
 #Главное меню админа
+@dp.message_handler(commands=['start'])
 async def start_handler(message):
-    await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}", reply_markup=keyboard.kb_main_inline)
+    await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}", reply_markup=keyboard.ka_main)
 
 #Выход в главное меню админа
-async def back_inline_menu_main(call, state:FSMContext):
+@dp.callback_query_handler(lambda callback: callback.data == "back_main_menu")
+async def back_main_menu(call, state:FSMContext):
     await state.finish()
     await bot.edit_message_text(
         text=f"Добро пожаловать в главное мнею {call.message.from_user.first_name}",
         message_id=call.message.message_id,
         chat_id=call.message.chat.id,
-        reply_markup=keyboard.kb_main_inline)
+        reply_markup=keyboard.ka_main)
 
 
 #Меню редавктирования
+@dp.callback_query_handler(lambda callback: callback.data == "edit")
 async def edit_handler(call):
     await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
 
-    
 
- 
+#Выход в меню редактирования
+@dp.callback_query_handler(lambda callback: callback.data == "back_menu_edit")
+async def back_edit_menu(call, state:FSMContext):
+    await state.finish()
+    await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
+
+
 #Редактирование и получения списка студентов или кураторов
+@dp.callback_query_handler(lambda callback: callback.data in ["student_2", "teacher_2"])
 async def edit_handler_student_teacher(call, state:FSMContext):
     my_key, rus_name, flag, prefix = ['student', 'студенты', True, 'std'] if call.data == 'student_2' else ['teacher', 'учителя', False, 'tch']
     records = func_bot.name_list_db_student_and_teacher(key=my_key)[0]
@@ -39,13 +48,10 @@ async def edit_handler_student_teacher(call, state:FSMContext):
     async with state.proxy() as data:
         data["key_student_call"] = flag
 
-#Выход в меню редактирования
-async def back_menu_student_teacher(call, state:FSMContext):
-    await state.finish()
-    await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
 
 #TODO: объединить
 #Общая информация о студенте и действия удалить или назад
+@dp.callback_query_handler(lambda callback: callback.data.startswith('std'))
 async def edit_handler_message_student(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_call"]
@@ -60,6 +66,7 @@ async def edit_handler_message_student(call, state:FSMContext):
 
             
 #Общая информация о кураторе и действия удалить или назад
+@dp.callback_query_handler(lambda callback: callback.data.startswith('tch'))
 async def edit_handler_message_teacher(call, state: FSMContext):
     await bot.edit_message_text(
         text=func_bot.info_list(call.data[-1], key="teacher")[0],
@@ -70,6 +77,7 @@ async def edit_handler_message_teacher(call, state: FSMContext):
         data["id_teacher"] = func_bot.info_list(call.data[-1], key="teacher")[1]
 
 #Удаление куратора или студента из бд
+@dp.callback_query_handler(lambda callback: callback.data in ["back", "del"])
 async def back_and_del_student_handler(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_call"]
@@ -86,7 +94,9 @@ async def back_and_del_student_handler(call, state:FSMContext):
         chat_id=call.message.chat.id,
         reply_markup=ikb)
 
+
 #Вход в меню поиска
+@dp.callback_query_handler(lambda callback: callback.data == "search", state=None)
 async def search_handler(call):
     await bot.edit_message_text(
         text=f"Кого ищем?",
@@ -95,6 +105,7 @@ async def search_handler(call):
         reply_markup=keyboard.student_and_teacher_search)
     
 #Ожидаем call данных от пользователя и добавляем ключ студента и входим в состояния
+@dp.callback_query_handler(lambda callback: callback.data in ["teacher_search", "student_search"])
 async def search_student_teacher_handler(call, state:FSMContext):
     key_student_search, rus_text = [True, "студента"] if call.data == "student_search" else [False, "куратора"]
     await bot.edit_message_text(
@@ -108,6 +119,7 @@ async def search_student_teacher_handler(call, state:FSMContext):
     await FSMAdmin.search_name_state.set()
 
 #Принимаем данные message_text и обрабатываем функцию с вероятностью получая клавиатуру студентов или кураторов которые нашлись
+@dp.callback_query_handler(lambda message: message.text, state=FSMAdmin.search_name_state)
 async def search_info_list_student_teacher(message, state:FSMContext):
     async with state.proxy() as data:
         key_student_search = data["key_student_search"]
@@ -130,6 +142,7 @@ async def search_info_list_student_teacher(message, state:FSMContext):
             data["key_student_search"] = key_student_search
 
 #Берём данные по нашедшему студенту нажав на кнопку
+@dp.callback_query_handler(lambda callback: callback.data.startswith("schs"))
 async def search_info_student(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_search"]
@@ -144,6 +157,7 @@ async def search_info_student(call, state:FSMContext):
 
 
 #Берём данные по нашедшему куратору нажав на кнопку
+@dp.callback_query_handler(lambda callback: callback.data.startswith("scht"))
 async def search_info_teacher(call, state:FSMContext):
         await bot.edit_message_text(
             text=func_bot.info_list(call.data[-1], key="teacher")[0],
@@ -155,6 +169,7 @@ async def search_info_teacher(call, state:FSMContext):
 
 #Удаляем студента или куратора или же выходим на главное меню
 #TODO: Буду доробатывать хочу сделать просто откат на хендлере что бы мог искать сколько угодно а не один раз
+@dp.callback_query_handler(lambda callback: callback.data in ["back_menu_edit", "del_search"])
 async def del_search_student_teacher(call, state:FSMContext):
     async with state.proxy() as data:
         key = data["key_student_search"]
@@ -170,15 +185,15 @@ async def del_search_student_teacher(call, state:FSMContext):
 
 
 #Добавление
+@dp.callback_query_handler(lambda callback: callback.data in ["add", "back_menu"])
 async def add_handler(call, state:FSMContext):
-    if call.data == "add":
-        await bot.edit_message_text(text="*Инструкция по добавлению*", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher_type)
-    else:
-        await bot.edit_message_text(text="*Инструкция по добавлению*", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher_type)
+    await bot.edit_message_text(text="*Инструкция по добавлению*", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher_type)
+    if call.data != "add":
         await state.finish()
 
 
 #Добавление типов профессии
+@dp.callback_query_handler(lambda callback: callback.data == "type")
 async def add_type_handler(call, state:FSMContext):
     async with state.proxy() as data:
         data["message_id_type"] = call.message.message_id
@@ -187,6 +202,7 @@ async def add_type_handler(call, state:FSMContext):
     await FSMAdmin.state_add_type_profession.set()
 
 
+@dp.message_handler(lambda message: message.text, state=FSMAdmin.state_add_type_profession)
 async def add_name_type_handler(message, state:FSMContext):
     async with state.proxy() as data:
         data["type_name"] = message.text
@@ -197,6 +213,7 @@ async def add_name_type_handler(message, state:FSMContext):
         await FSMAdmin.next()
 
 
+@dp.callback_query_handler(lambda callback: callback.data in ["accept_2", "reject_2"])
 async def accept_or_reject_type_handler(call, state:FSMContext):
     if call.data == "accept_2":
         async with state.proxy() as data:
@@ -209,6 +226,7 @@ async def accept_or_reject_type_handler(call, state:FSMContext):
 
 
 #Добавление
+@dp.callback_query_handler(lambda callback: callback.data in ["student", "teacher"])
 async def add_studenta_or_teacher_handler(call, state:FSMContext):
     postfix, flag, rus_name = ['std', True, 'студента'] if call.data == "student" else ['tch', False, 'куратора']
     await bot.edit_message_text(text=f"Введите имя {rus_name}", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.back_inline_menu_butt)
@@ -218,6 +236,8 @@ async def add_studenta_or_teacher_handler(call, state:FSMContext):
         data["student"] = flag
     await FSMAdmin.state_add_name.set()
 
+
+@dp.message_handler(lambda message: message.text, state=FSMAdmin.state_add_name)
 async def add_name_student_or_teacher_handler(message, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
@@ -242,6 +262,7 @@ async def add_name_student_or_teacher_handler(message, state:FSMContext):
         await FSMAdmin.state_add_name.set()
 
 
+@dp.callback_query_handler(lambda callback: callback.data in ["yes", "no"], state=FSMAdmin.state_yes_and_no)
 async def yes_and_no_handler(call, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
@@ -256,6 +277,7 @@ async def yes_and_no_handler(call, state:FSMContext):
         await FSMAdmin.state_add_name.set()
 
 
+@dp.callback_query_handler(lambda callback: callback.data.startswith('type'), state=FSMAdmin.state_add_type)
 async def add_type_student_or_teacher_handler(call, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
@@ -270,6 +292,7 @@ async def add_type_student_or_teacher_handler(call, state:FSMContext):
     await FSMAdmin.next()
 
 
+@dp.message_handler(lambda message: message.text, state=FSMAdmin.state_add_tg_name)
 async def add_tg_name_student_or_teacher_handler(message, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
@@ -286,6 +309,7 @@ async def add_tg_name_student_or_teacher_handler(message, state:FSMContext):
     await FSMAdmin.next()
 
 
+@dp.callback_query_handler(lambda callback: callback.data in ["accept", "reject"] or callback.data in ["accept_2", "reject_2"], state=FSMAdmin.accept_or_reject)
 async def accept_or_reject_add_student_or_teacher_handler(call, state:FSMContext):
     async with state.proxy() as data:
         key_student = data["student"]
@@ -302,44 +326,3 @@ async def accept_or_reject_add_student_or_teacher_handler(call, state:FSMContext
     else:
         await bot.edit_message_text(text="*Инструкция по добавлению*", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher_type)
     await state.finish()
-
-
-
-def register_handler(dp):
-    dp.register_message_handler(start_handler, commands=["start"])
-    dp.register_callback_query_handler(back_inline_menu_main, lambda callback: callback.data == "back_main_menu", state=None)
-
-    #Редактирование студентов и кураторов
-    dp.register_callback_query_handler(edit_handler, lambda callback: callback.data == "edit", state=None)
-    dp.register_callback_query_handler(back_menu_student_teacher, lambda callback: callback.data == "back_menu_edit", state=None)
-    dp.register_callback_query_handler(edit_handler_student_teacher, lambda callback: callback.data in ["student_2", "teacher_2"], state=None)
-    dp.register_callback_query_handler(edit_handler_message_student, lambda callback: callback.data.startswith('std'), state=None)
-    dp.register_callback_query_handler(edit_handler_message_teacher, lambda callback: callback.data.startswith('tch'), state=None)
-    dp.register_callback_query_handler(back_and_del_student_handler, lambda callback: callback.data in ["back", "del"], state=None)
-
-    #Поиск студентов
-    dp.register_callback_query_handler(search_handler, lambda callback: callback.data == "search", state=None)
-    dp.register_callback_query_handler(search_student_teacher_handler, lambda callback: callback.data in ["teacher_search", "student_search"])
-    dp.register_message_handler(search_info_list_student_teacher, lambda message: message.text, state=FSMAdmin.search_name_state)
-    dp.register_callback_query_handler(search_info_student, lambda callback: callback.data.startswith("schs"),state=None)
-    dp.register_callback_query_handler(search_info_teacher, lambda callback: callback.data.startswith("scht"),state=None)
-    dp.register_callback_query_handler(del_search_student_teacher, lambda callback: callback.data in ["back_menu_edit", "del_search"], state=None)
-
-
-    #Добавление
-    dp.register_callback_query_handler(add_handler, lambda callback: callback.data in ["add", "back_menu"], state="*")
-
-    #Добавление студента и куратора
-    dp.register_callback_query_handler(add_studenta_or_teacher_handler, lambda callback: callback.data in ["student", "teacher"], state=None)
-    dp.register_callback_query_handler(yes_and_no_handler, lambda callback: callback.data in ["yes", "no"], state=FSMAdmin.state_yes_and_no)
-    dp.register_message_handler(add_name_student_or_teacher_handler, lambda message: message.text, state=FSMAdmin.state_add_name)
-    dp.register_callback_query_handler(add_type_student_or_teacher_handler, lambda callback: callback.data in [f"type_{i + 1}" for i in range(len([i for i in func_bot.db("Type_and_articul")]))], state=FSMAdmin.state_add_type)
-    dp.register_message_handler(add_tg_name_student_or_teacher_handler, lambda message: message.text, state=FSMAdmin.state_add_tg_name)
-    dp.register_callback_query_handler(accept_or_reject_add_student_or_teacher_handler, lambda callback: callback.data in ["accept", "reject"] or callback.data in ["accept_2", "reject_2"], state=FSMAdmin.accept_or_reject)
-
-
-    #Добавления типа профессии
-    dp.register_callback_query_handler(add_type_handler, lambda callback: callback.data == "type", state=None)
-    dp.register_message_handler(add_name_type_handler, lambda message: message.text, state=FSMAdmin.state_add_type_profession)
-    dp.register_callback_query_handler(accept_or_reject_type_handler, lambda callback: callback.data in ["accept_2", "reject_2"], state=FSMAdmin.accept_or_reject_type)
-
