@@ -28,7 +28,7 @@ async def edit_handler(call):
 
 
 #Выход в меню редактирования
-@dp.callback_query_handler(lambda callback: callback.data == "back_menu_edit")
+@dp.callback_query_handler(lambda callback: callback.data == "back_menu_edit", state="*")
 async def back_edit_menu(call, state:FSMContext):
     await state.finish()
     await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher)
@@ -111,7 +111,8 @@ async def search_student_teacher_handler(call, state:FSMContext):
     await bot.edit_message_text(
         text=f"Введите имя {rus_text} которого хотите найти",
         message_id=call.message.message_id,
-        chat_id=call.message.chat.id)
+        chat_id=call.message.chat.id,
+        reply_markup=keyboard.back_inline_menu_edit_butt)
     async with state.proxy() as data:
         data["key_student_search"] = key_student_search
         data["message_search_id"] = call.message.message_id
@@ -119,7 +120,7 @@ async def search_student_teacher_handler(call, state:FSMContext):
     await FSMAdmin.search_name_state.set()
 
 #Принимаем данные message_text и обрабатываем функцию с вероятностью получая клавиатуру студентов или кураторов которые нашлись
-@dp.callback_query_handler(lambda message: message.text, state=FSMAdmin.search_name_state)
+@dp.message_handler(lambda message: message.text, state=FSMAdmin.search_name_state)
 async def search_info_list_student_teacher(message, state:FSMContext):
     async with state.proxy() as data:
         key_student_search = data["key_student_search"]
@@ -185,7 +186,7 @@ async def del_search_student_teacher(call, state:FSMContext):
 
 
 #Добавление
-@dp.callback_query_handler(lambda callback: callback.data in ["add", "back_menu"])
+@dp.callback_query_handler(lambda callback: callback.data in ["add", "back_menu"], state="*")
 async def add_handler(call, state:FSMContext):
     await bot.edit_message_text(text="*Инструкция по добавлению*", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher_type)
     if call.data != "add":

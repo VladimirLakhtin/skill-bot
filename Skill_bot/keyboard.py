@@ -17,6 +17,11 @@ butt_back_and_del_prod = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Назад", callback_data="back"), InlineKeyboardButton("Удалить", callback_data="del")]
 ])
 
+back_inline_menu_edit_butt = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit")]
+])
+
+
 #Назад в обычное меню
 back_inline_menu = InlineKeyboardButton("Назад в меню", callback_data="back_menu")
 back_inline_menu_butt = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(back_inline_menu)
