@@ -27,27 +27,27 @@ back_inline_menu = InlineKeyboardButton("Назад в меню", callback_data=
 back_inline_menu_butt = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(back_inline_menu)
 
 #Создание кнопок списка
-def create_ikb(records, type_class):
+def create_ikb(record_id, records_names, type_class):
     ikb = InlineKeyboardMarkup()
     back_inline_menu_edit = InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit")
-    for i, std in enumerate(records):
-        ikb.add(InlineKeyboardButton(std, callback_data=f"{type_class}_{i + 1}"))
-    if type_class == 'type': 
-        ikb.add(back_inline_menu)
-    else:
+    for i, name in enumerate(records_names):
+        ikb.add(InlineKeyboardButton(name, callback_data=f"{type_class}_{record_id[i]}"))
+    if type_class != 'type': 
         ikb.add(back_inline_menu_edit)
+    else:
+        ikb.add(back_inline_menu)
     return ikb
     
 #Кнопки учителя студента и типа
 back_inline_main_menu = InlineKeyboardButton("В главное меню", callback_data="back_main_menu")
 student_and_teacher_type = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton("Куратор", callback_data="teacher"), InlineKeyboardButton("Студент", callback_data="student"),InlineKeyboardButton("Тип Профессии", callback_data="type")],
+    [InlineKeyboardButton("Куратор", callback_data="add_tch"), InlineKeyboardButton("Студент", callback_data="add_std")],
     [InlineKeyboardButton("В главное меню", callback_data="back_main_menu")]
 ])
 
 #Кнопки учителя студента поиска
 student_and_teacher = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton("Куратор", callback_data="teacher_2"), InlineKeyboardButton("Студент", callback_data="student_2"), InlineKeyboardButton("Поиск", callback_data="search")],
+    [InlineKeyboardButton("Куратор", callback_data="edit_tch"), InlineKeyboardButton("Студент", callback_data="edit_std"), InlineKeyboardButton("Поиск", callback_data="search")],
     [back_inline_main_menu]
 ])
 
@@ -56,7 +56,6 @@ student_and_teacher_search = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Куратора", callback_data="teacher_search"), InlineKeyboardButton("Студента", callback_data="student_search")],
     [InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit")]
 ])
-
 
 
 #Кнопки да и нет

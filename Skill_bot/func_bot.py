@@ -1,36 +1,93 @@
 import sqlite3
 import difflib
 
+
 #Конект с БД
-connection = sqlite3.connect("db_Skill_Box_main.db")
+connection = sqlite3.connect("db.db")
 cursor = connection.cursor()
 
+
 #Список данных из бд
-def db(name_bd):
-    cursor.execute(f"""SELECT * from {name_bd}""")
-    records = cursor.fetchall()
-    return sorted(records)
+def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
+
+    # WHERE param
+    if condition:
+        condition = 'WHERE ' + condition + ' '
+
+    # SELECT param
+    if len(columns) > 1:
+        columns_text = ', '.join(columns)
+    elif len(columns) == 1:
+        columns_text = columns[0]
+    else:
+        columns_text = '*'
+
+    # FROM param
+    if len(tables) == 2:
+        tables = tables[0] + ' INNER JOIN ' + tables[1] + ' ON teacher_id == teachers.id'
+    else:
+        tables = tables[0]
+
+    # request
+    request = f"""SELECT {columns_text} FROM {tables} {condition}"""
+    cursor.execute(request)
+    records = cursor.fetchone() if is_one else cursor.fetchall()
+    # return
+    if len(columns) > 1 and not is_one:
+        list_of_columns = []
+        for i in range(len(columns)):
+            if len(records) > 1:
+                list_of_columns.append([rec[i] for rec in records])
+            else:
+                list_of_columns.append(records[0][i])
+        return list_of_columns
+    elif len(columns) == 1:
+        return [rec[0] for rec in records]
+    return records
 
 
-#Берём данные id и имени из бд по типу студент или куратор: 
-def name_list_db_student_and_teacher(key):
-        records = db("Skill_Box")
-        list_name = []
-        list_id = []
-        class_human = "Студент" if key == "student" else "Куратор"
-        for i in records:
-            if i[-1] == class_human:
-                list_name.append(i[1])
-                list_id.append(i[0])
-        return list_name, list_id
+#Берём информацию по студенту или куратору по id кнопке
+def get_info_list(record_id: str, table: str) -> list():
+    columns = [f'{table}.id', f'{table}.name', 'direction', f'{table}.tg_username']
+    tables = ['teachers']
+    if table == 'students':
+        columns.append('score')
+        columns.append('teachers.name')
+        tables = ['students', 'teachers']
+    list_info = main_get(
+        tables=tables, 
+        columns=columns, 
+        condition=f"{table}.id == {record_id}",
+        is_one=True
+    )
+    text_info = f"ID - {list_info[0]}\nИмя - {list_info[1]}\nПрофессия - {list_info[2]}\nТГ-name - {list_info[3]}"
+    if table == 'students':
+        text_info += f'\nSkillCoins - {list_info[4]}\nКуратор - {list_info[5]}'
+    return text_info
+
+
+#Удаляем человека из бд по id
+def remove_record(record_id: str, table: str) -> None:
+    cursor.execute(f"""DELETE FROM {table} WHERE id = {record_id}""")
+    connection.commit()
+
+
+#Добавляем тип профессии
+def add_record(table: str, params: dict) -> None:
+    values = [str(p) if type(p) != str else p for p in params.values()]
+    request = f"""INSERT INTO {table} ({', '.join(params.keys())}) VALUES ({', '.join(values)})"""
+    print(request)
+    cursor.execute(request)
+    connection.commit()
+
 
 #Возвращаем список поиска студентов или кураторов при помощи вероятности совпадения букв в фамилии и в имени
 #TODO: Доработать
-def search_db_student_teacher(key, name):
+def search_db_student_teacher(table, name):
     lsit_name_search_human_probability = []
     list_name_search_human_100_probability = []
     try:
-        list_name = name_list_db_student_and_teacher(key)[0]
+        list_name = name_list_db_student_and_teacher(table)[0]
         list_name_search = [i.split() for i in list_name]
         name_1 = name.lower().split()
         for i in list_name_search:
@@ -59,42 +116,5 @@ def search_db_student_teacher(key, name):
     except Exception:
         return lsit_name_search_human_probability
 
-
-
-
-#Берём информацию по студенту или куратору по id кнопки
-def info_list(call, key):
-    id_human = name_list_db_student_and_teacher(key=key)[1]
-    index_id = id_human[int(call) - 1]
-    cursor.execute("""select * from Skill_Box where id = ?""", (index_id, ))
-    info = cursor.fetchall()
-    list_info = [str(i) for i in info[0]]
-    text_info = f"ID - {list_info[0]}\nИмя - {list_info[1]}\nПрофессия - {list_info[2]}\nТГ-id - {list_info[3]}\nSkillCoins - {list_info[4]}\nАртикул профессии - {list_info[5]}\n"
-    return text_info, list_info[0]
-
-
-#Удаляем человека из бд по id
-#TODO: Переименуй функцию и в хендлере тоже пж
-def removing_student(call_text):
-    id = call_text
-    cursor.execute("""DELETE from "Skill_Box" where id = ?""", (id, ))
-    connection.commit()
-
-#Добавляем тип профессии
-#TODO: Можешь тоже переименовать если хочешь
-def add_type(name_type):
-    name_type = name_type.split()
-    name_type = " ".join(name_type)
-    cursor.execute("""INSERT INTO Type_and_articul (Type) VALUES (?)""", ([name_type]))
-    connection.commit()
-
-#Добавляем человека в бд
-#TODO: Переименуй функцию и в хендлере тоже пж
-def add_student(name, type, id_tg, articul, class_human):
-    name = name.split()
-    name = " ".join(name)
-    id_tg = id_tg.split()
-    id_tg = " ".join(id_tg)
-    cursor.execute("INSERT INTO Skill_Box (Name, Type, ID_Tg, Rating, Articul, Class) VALUES (?, ?, ?, ?, ?, ?)", ([name, type, id_tg, 0, articul, class_human]))
-    connection.commit()
-
+if __name__ == "__main__":
+    print(main_get(tables=['teachers'], columns=['direction']))
