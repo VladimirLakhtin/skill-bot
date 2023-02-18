@@ -197,7 +197,6 @@ async def add_name_student_or_teacher_handler(message, state:FSMContext):
     async with state.proxy() as data:
         table = data["table"]
     postfix, mini_text = ['std', 'профессию студента'] if table == 'students' else ['tch', 'направления куратора']
-
     status = data_checking.cheak_input_text(message.text, key="имени")
     async with state.proxy() as data:
         data["name_" + postfix] = status[-1]
@@ -213,14 +212,17 @@ async def add_name_student_or_teacher_handler(message, state:FSMContext):
             await FSMAdmin.next()
             await FSMAdmin.next()
         else:
-            await bot.edit_message_text(text=f"Введите название типа профессии", message_id=message_id, chat_id=chat_id, reply_markup=keyboard.back_inline_menu_butt)
-            await FSMAdmin.state_add_type_profession.set()
+            await bot.edit_message_text(text=f"Введите названия направления куратора", message_id=message_id, chat_id=chat_id, reply_markup=keyboard.back_inline_menu_butt)
+            async with state.proxy() as data:
+                data["call_message_id_tch"] = message_id
+                data["call_chat_id_tch"] = chat_id
+            await FSMAdmin.state_add_profession.set()
     elif status[1] == "normal":
         await bot.edit_message_text(text=status[0], message_id=message_id, chat_id=chat_id, reply_markup=keyboard.yes_and_no)
         await FSMAdmin.next()
     else:
         await bot.edit_message_text(text=status[0], message_id=message_id, chat_id=chat_id, reply_markup=keyboard.back_inline_menu_butt)
-        await FSMAdmin.state_add_name.set()
+        await FSMAdmin.next()
 
 
 @dp.callback_query_handler(lambda callback: callback.data in ["yes", "no"], state=FSMAdmin.state_yes_and_no)
@@ -235,11 +237,25 @@ async def yes_and_no_handler(call, state:FSMContext):
             await bot.edit_message_text(text=f"Хорошо, теперь выбери профессию {rus_name}", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=ikb)
             await FSMAdmin.next()
         else:
-            await bot.edit_message_text(text=f"Введите название типа профессии", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.back_inline_menu_butt)
-            await FSMAdmin.state_add_type_profession.set()
+            await bot.edit_message_text(text=f"Введите названия направления куратора", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.back_inline_menu_butt)
+            async with state.proxy() as data:
+                data["call_message_id_tch"] = call.message.message_id
+                data["call_chat_id_tch"] = call.message.chat.id
+            await FSMAdmin.state_add_profession.set()
     else:
         await bot.edit_message_text(text=f"Введите имя {rus_name}", message_id=call.message.message_id,chat_id=call.message.chat.id, reply_markup=keyboard.back_inline_menu_butt)
         await FSMAdmin.state_add_name.set()
+
+
+@dp.message_handler(lambda message: message.text, state=FSMAdmin.state_add_profession)
+async def add_prof_teacher(message, state:FSMContext):
+    async with state.proxy() as data:
+        message_id = data["call_message_id_tch"]
+        chat_id = data["call_chat_id_tch"]
+        data["prof"] = message.text
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    await bot.edit_message_text(text=f"Теперь введи ТГ id куратора", message_id=message_id, chat_id=chat_id, reply_markup=keyboard.back_inline_menu_butt)
+    await FSMAdmin.state_add_tg_name.set()
 
 
 @dp.callback_query_handler(lambda callback: callback.data.startswith('type'), state=FSMAdmin.state_add_type)
@@ -260,10 +276,14 @@ async def add_type_student_or_teacher_handler(call, state:FSMContext):
 async def add_tg_name_student_or_teacher_handler(message, state:FSMContext):
     async with state.proxy() as data:
         table = data["table"]
-    postfix, rus_name = ['std', 'Студент'] if table == 'students' else ['tch', 'Куратор']
+    postfix, rus_name = ['std', 'Студента'] if table == 'students' else ['tch', 'Куратора']
     async with state.proxy() as data:
         name = data["name_" + postfix]
-        teacher_name, direction = func_bot.main_get(tables=['teachers'], columns=["name", 'direction'], condition=f"id = {data['type_' + postfix]}", is_one=True)
+        if table == 'students':
+            teacher_name, direction = func_bot.main_get(tables=['teachers'], columns=["name", 'direction'], condition=f"id = {data['type_' + postfix]}", is_one=True)
+        else:
+            direction = data["prof"]
+            teacher_name = ""
         data["tg_id_" + postfix] = message.text
         message_id_call = data["call_message_id_" + postfix]
         chat_id_call = data["call_chat_id_" + postfix]
@@ -280,17 +300,18 @@ async def accept_or_reject_add_student_or_teacher_handler(call, state:FSMContext
     if call.data == "accept":
         async with state.proxy() as data:
             name = data["name_" + postfix]
-            direction = data["type_" + postfix]
             tg_id = data["tg_id_" + postfix]
-        params = {
-            "name": f"'{name}'",
-            "score": 0,
-            "teacher_id": direction,
-            'tg_id': tg_id,
-        }
+            if table == 'students':
+                direction = data["type_" + postfix]
+                params = {"name": f"'{name}'", "score": 0, "teacher_id": direction, 'tg_id': tg_id}
+            else:
+                direction = data["prof"]
+                params = {"name": f"'{name}'", "direction": direction, 'tg_id': tg_id}
+                print(params)
         func_bot.add_record(table=table, params=params)
         await bot.edit_message_text(text=f"{rus_name} {name} успешно добавлен\nХотите ещё что-то добавить?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher_type)
         await state.finish()
     else:
         await bot.edit_message_text(text="*Инструкция по добавлению*", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.student_and_teacher_type)
     await state.finish()
+
