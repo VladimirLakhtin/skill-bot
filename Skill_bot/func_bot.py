@@ -60,10 +60,14 @@ def get_info_list(record_id: str, table: str) -> list():
         condition=f"{table}.id == {record_id}",
         is_one=True
     )
-    text_info = f"ID - {list_info[0]}\nИмя - {list_info[1]}\nПрофессия - {list_info[2]}\nТГ-name - {list_info[3]}"
+    text_info = f"ID - {list_info[0]}\nИмя - {list_info[1]}\nПрофессия - {list_info[2]}\nUser-name - {list_info[3]}"
+    columns = ['User-id','Имя', 'User-name', 'Профессия']
     if table == 'students':
         text_info += f'\nSkillCoins - {list_info[4]}\nКуратор - {list_info[5]}'
-    return text_info
+        columns.append('Куратор')
+        columns.append('SkillCoins')
+
+    return text_info, columns
 
 
 #Удаляем человека из бд по id
@@ -76,45 +80,40 @@ def remove_record(record_id: str, table: str) -> None:
 def add_record(table: str, params: dict) -> None:
     values = [str(p) if type(p) != str else p for p in params.values()]
     request = f"""INSERT INTO {table} ({', '.join(params.keys())}) VALUES ({', '.join(values)})"""
-    print(request)
     cursor.execute(request)
     connection.commit()
 
 
 #Возвращаем список поиска студентов или кураторов при помощи вероятности совпадения букв в фамилии и в имени
-#TODO: Доработать
-def search_db_student_teacher(table, name):
-    lsit_name_search_human_probability = []
-    list_name_search_human_100_probability = []
-    try:
-        list_name = name_list_db_student_and_teacher(table)[0]
-        list_name_search = [i.split() for i in list_name]
-        name_1 = name.lower().split()
-        for i in list_name_search:
-            surname_human = i[0].lower()
-            name_human = i[1].lower()
-            surname_human_back = i[1].lower()
-            name_human_back = i[0].lower()
-            if len(name.split()) == 1:
-                matcher_surname = difflib.SequenceMatcher(None, name_1[0], surname_human)
-                matcher_name = difflib.SequenceMatcher(None, name_1[0], name_human)
-                matcher_surname_back = difflib.SequenceMatcher(None, name_1[0], surname_human_back)
-                matcher_name_back = difflib.SequenceMatcher(None, name_1[0], name_human_back)
-            else:
-                matcher_surname = difflib.SequenceMatcher(None, name_1[0], surname_human)
-                matcher_name = difflib.SequenceMatcher(None, name_1[1], name_human)
-                matcher_surname_back = difflib.SequenceMatcher(None, name_1[0], surname_human_back)
-                matcher_name_back = difflib.SequenceMatcher(None, name_1[1], name_human_back)
-            if ((matcher_surname.ratio() >= 0.35 or matcher_name.ratio() >= 0.35) and (matcher_name.ratio() < 0.75 or matcher_surname.ratio() < 0.75)) or ((matcher_surname_back.ratio() >= 0.35 or matcher_name_back.ratio() >= 0.35) and (matcher_name_back.ratio() < 0.75 or matcher_surname_back.ratio() < 0.75)) :
-                lsit_name_search_human_probability.append(" ".join(i))
-            elif (matcher_name.ratio() >= 0.83 and matcher_surname.ratio() >= 0.83) or (matcher_name_back.ratio() >= 0.83 and matcher_surname_back.ratio() >= 0.83):
-                list_name_search_human_100_probability.append(" ".join(i))
-        if len(list_name_search_human_100_probability) == 1:
-            return list_name_search_human_100_probability
+def get_search_results(table, name):
+    result_id, result_names = [], []
+    prob = 0.7
+    id_list, names_list = main_get(tables=[table], columns=['id', 'name'])
+    names_split_list = [i.split() for i in names_list]
+    name = name.lower().split()
+    for i, cur_name in enumerate(names_split_list):
+        surname_human = cur_name[0].lower()
+        name_human = cur_name[1].lower()
+        if len(name) == 1:
+            matcher_surname = difflib.SequenceMatcher(None, name[0], surname_human).ratio()
+            matcher_name = difflib.SequenceMatcher(None, name[0], name_human).ratio()
+            if (matcher_surname >= prob or matcher_name>= prob):
+                result_id.append(id_list[i])
+                result_names.append(cur_name[0] + ' ' + cur_name[1])
         else:
-            return lsit_name_search_human_probability
-    except Exception:
-        return lsit_name_search_human_probability
+            matcher_surname = difflib.SequenceMatcher(None, name[0], surname_human).ratio()
+            matcher_name = difflib.SequenceMatcher(None, name[1], name_human).ratio()
+            matcher_surname_back = difflib.SequenceMatcher(None, name[0], name_human).ratio()
+            matcher_name_back = difflib.SequenceMatcher(None, name[1], surname_human).ratio()
+            if (matcher_surname >= prob or matcher_name>= prob) or (matcher_surname_back >= prob or matcher_name_back >= prob):
+                result_id.append(id_list[i])             
+                result_names.append(" ".join(cur_name))
+    return result_id, result_names
+
 
 if __name__ == "__main__":
-    print(main_get(tables=['teachers'], columns=['direction']))
+    name = input()
+    while name != 'q':
+        print(get_search_results('students', name))
+        name = input()
+    # print(difflib.SequenceMatcher(None, 'Ирина', 'Ирина').ratio())
