@@ -1,5 +1,5 @@
 import data_checking
-import keyboard
+import keyboards.admin_keyboards as keyboard
 from create_bot import bot, dp
 from state import FSMAdmin, FSMContext
 
@@ -101,6 +101,7 @@ async def search_student_teacher_handler(call, state:FSMContext):
         data["chat_search_id"] = call.message.chat.id
     await FSMAdmin.search_name_state.set()
 
+
 #Принимаем данные message_text и обрабатываем функцию с вероятностью получая клавиатуру студентов или кураторов которые нашлись
 @dp.message_handler(lambda message: message.text, state=FSMAdmin.search_name_state)
 async def search_info_list_student_teacher(message, state:FSMContext):
@@ -126,7 +127,6 @@ async def search_info_list_student_teacher(message, state:FSMContext):
         reply_markup=ikb)
 
 
-
 #Берём данные по нашедшему куратору нажав на кнопку
 @dp.callback_query_handler(lambda callback: callback.data.startswith("scht"))
 async def search_info_teacher(call, state:FSMContext):
@@ -137,22 +137,6 @@ async def search_info_teacher(call, state:FSMContext):
             reply_markup=keyboard.butt_back_and_del_search)
         async with state.proxy() as data:
             data["id_teacher_search"] = func_bot.info_list(call.data[-1], key="teacher")[1]
-
-#Удаляем студента или куратора или же выходим на главное меню
-#TODO: Буду доробатывать хочу сделать просто откат на хендлере что бы мог искать сколько угодно а не один раз
-@dp.callback_query_handler(lambda callback: callback.data in ["back_menu_edit", "del_search"])
-async def del_search_student_teacher(call, state:FSMContext):
-    async with state.proxy() as data:
-        key = data["key_student_search"]
-    name, rus_name, prefix = ['student', 'студенты', 'std'] if key else ['teacher', 'кураторы', 'tch']
-    if call.data == "del_search":
-        async with state.proxy() as data:
-            id_student = data['id_' + name + "_search"]
-        func_bot.removing_student(id_student)
-    await bot.edit_message_text(text="Кого хотите отредактировать?", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.edit_menu)
-
-
-#Всё устал писать я спать коменты)
 
 
 #Добавление

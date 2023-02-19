@@ -25,7 +25,7 @@ back_add_menu = InlineKeyboardMarkup(inline_keyboard=[[back_add_menu_btn]])
 
 
 #Создание кнопок списка
-def create_ikb_records_list(record_id, records_names, type_class, is_search=False):
+def create_ikb_records_list(record_id, records_names, type_class, is_search=False) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     for i, name in enumerate(records_names):
         ikb.add(InlineKeyboardButton(name, callback_data=f"{type_class}_{record_id[i]}"))
@@ -39,7 +39,7 @@ def create_ikb_records_list(record_id, records_names, type_class, is_search=Fals
     return ikb
 
 
-def create_ikb_info_list(rec_id: int, columns: list):
+def create_ikb_info_list(rec_id: int, columns: list) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     translate = {
         'Имя': 'name',
@@ -51,7 +51,7 @@ def create_ikb_info_list(rec_id: int, columns: list):
     }
     for i, feat in enumerate(columns):
         if (i + 1) % 2 == 0:
-            ikb.add(prev_btn, InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}_{translate['feat']}"))
+            ikb.add(prev_btn, InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}_{translate[feat]}"))
         prev_btn = InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}")
     ikb.row(InlineKeyboardButton("Удалить", callback_data="del"), InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
     return ikb
