@@ -12,3 +12,5 @@ class FSMAdmin(StatesGroup):
     state_add_profession = State()
 
     search_name_state = State()
+
+    edit_records_state = State()

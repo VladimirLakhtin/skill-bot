@@ -1,5 +1,6 @@
 import data_checking
 import keyboards.admin_keyboards as keyboard
+import state
 from create_bot import bot, dp
 from state import FSMAdmin, FSMContext
 
@@ -63,12 +64,12 @@ async def edit_all_records_list(call, state:FSMContext):
 
 
 # Show full info about record
-@dp.callback_query_handler(lambda callback: callback.data.startswith('std') or callback.data.startswith('tch'))
+@dp.callback_query_handler(lambda callback: callback.data.startswith('std') or callback.data.startswith('tch'), state="*")
 async def edit_record_info(call, state:FSMContext):
     table = 'students' if call.data.split('_')[0] == 'std' else 'teachers'
     rec_id = call.data.split('_')[-1]
-    text ,columns = func_bot.get_info_list(rec_id, table=table)
-    ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns)
+    text, columns = func_bot.get_info_list(rec_id, table=table)
+    ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns, table=table)
     await bot.edit_message_text(
         text=text,
         message_id=call.message.message_id,
@@ -121,6 +122,60 @@ async def search_info_list_student_teacher(message, state:FSMContext):
         reply_markup=ikb)
 
 
+@dp.callback_query_handler(lambda callback: callback.data.startswith("feat_"))
+async def edit_record_feat(call, state:FSMContext):
+    _, rec_id, feat_name, feat_name_rus, table = call.data.split("_")
+    ikb = keyboard.create_ikb_back_rec_info(rec_id, table)
+    await bot.edit_message_text(
+        text=f"Введите изменение значении {feat_name_rus}",
+        message_id=call.message.message_id,
+        chat_id=call.message.chat.id,
+        reply_markup=ikb)
+    async with state.proxy() as data:
+        data["edit_call_message_id"] = call.message.message_id
+        data["edit_call_chat_id"] = call.message.chat.id
+        data["params"] = [rec_id, feat_name, table, feat_name_rus]
+        await FSMAdmin.edit_records_state.set()
+
+@dp.message_handler(lambda message: message.text, state=FSMAdmin.edit_records_state)
+async def edit_recod(message, state:FSMContext):
+    async with state.proxy() as data:
+        params = data["params"]
+        message_id = data["edit_call_message_id"]
+        chat_id = data["edit_call_chat_id"]
+        data["answer"] = message.text
+        rec_id, feat_name, table, feat_name_rus = params
+    text_info = func_bot.get_info_list(rec_id, table=table)[0]
+    old_value = "".join([i.split(" - ")[1] for i in text_info.splitlines() if feat_name_rus in i.split(" - ")])
+    async with state.proxy() as data:
+        data["old_value"] = old_value
+    await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
+    await bot.edit_message_text(
+        text=f"Вы точно хотите изменить {old_value} на {message.text}",
+        message_id=message_id,
+        chat_id=chat_id,
+        reply_markup=keyboard.accept_and_reject_edit)
+
+@dp.callback_query_handler(lambda callback: callback.data in ["accept_edit", "reject_edit"], state=FSMAdmin.edit_records_state)
+async def recject_or_accept_edit(call, state:FSMContext):
+    async with state.proxy() as data:
+        params = data["params"]
+        answer = data["answer"]
+        old_value = data["old_value"]
+    rec_id, feat_name, table, name_rus = params
+    if call.data == "accept_edit":
+        func_bot.passing_func(table, rec_id, answer)
+    #Функция изменения данных по дб
+    text, columns = func_bot.get_info_list(rec_id, table=table)
+    ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns, table=table)
+    await bot.edit_message_text(
+        text=text,
+        message_id=call.message.message_id,
+        chat_id=call.message.chat.id,
+        reply_markup=ikb)
+    await state.finish()
+
+
 #------------------------------------------------Add------------------------------------------------
 
 # Add menu
@@ -136,8 +191,7 @@ async def add_menu(call, state:FSMContext):
 async def request_name(call, state:FSMContext):
     postfix = call.data.split('_')[-1]
     table, rus_name = ['students', 'студента'] if postfix == "std" else ['teachers', 'куратора']
-    ikb = keyboard.create_ikb_back_edit_menu(postfix)
-    await bot.edit_message_text(text=f"Введите имя {rus_name}", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=ikb)
+    await bot.edit_message_text(text=f"Введите имя {rus_name}", message_id=call.message.message_id, chat_id=call.message.chat.id, reply_markup=keyboard.back_add_menu)
     async with state.proxy() as data:
         data["message_id_" + postfix] = call.message.message_id
         data["chat_id_" + postfix] = call.message.chat.id

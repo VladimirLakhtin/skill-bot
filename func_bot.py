@@ -47,7 +47,7 @@ def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
 
 
 #Берём информацию по студенту или куратору по id кнопке
-def get_info_list(record_id: str, table: str) -> list():
+def get_info_list(record_id: str, table: str):
     columns = [f'{table}.id', f'{table}.name', 'direction', f'{table}.tg_username']
     tables = ['teachers']
     if table == 'students':
@@ -111,9 +111,7 @@ def get_search_results(table, name):
     return result_id, result_names
 
 
-if __name__ == "__main__":
-    name = input()
-    while name != 'q':
-        print(get_search_results('students', name))
-        name = input()
-    # print(difflib.SequenceMatcher(None, 'Ирина', 'Ирина').ratio())
+def passing_func(table, rec_id, answer):
+    pass
+
+

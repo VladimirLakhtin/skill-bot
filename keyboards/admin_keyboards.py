@@ -39,20 +39,21 @@ def create_ikb_records_list(record_id, records_names, type_class, is_search=Fals
     return ikb
 
 
-def create_ikb_info_list(rec_id: int, columns: list) -> InlineKeyboardMarkup:
+def create_ikb_info_list(rec_id: int, columns: list, table) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     translate = {
         'Имя': 'name',
-        'User-id': 'tg_id',
-        'User-name': 'tg_user_name',
+        'User-id': 'tg-id',
+        'User-name': 'tg-user-name',
         'Профессия': 'direction',
         'Куратор': 'name',
         'SkillCoins': 'account'
     }
     for i, feat in enumerate(columns):
+        btn = InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}_{translate[feat]}_{feat}_{table}")
         if (i + 1) % 2 == 0:
-            ikb.add(prev_btn, InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}_{translate[feat]}"))
-        prev_btn = InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}")
+            ikb.add(prev_btn, btn)
+        prev_btn = btn
     ikb.row(InlineKeyboardButton("Удалить", callback_data="del"), InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
     return ikb
 
@@ -87,10 +88,12 @@ accept_and_reject = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Принять", callback_data="accept"), InlineKeyboardButton("Отмена", callback_data="reject")]
 ])
 
-#Кнопки принять и отменить для добавления кураторов
-accept_and_reject_3 = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton("Принять", callback_data="accept_3"), InlineKeyboardButton("Отмена", callback_data="reject_3")]
-])
 
+def create_ikb_back_rec_info(rec_id, table):
+    type_class = "std" if table == "students" else "teachers"
+    ikb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton("Назад", callback_data= f"{type_class}_{rec_id}")]])
+    return ikb
 
-
+accept_and_reject_edit = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton("Принять", callback_data="accept_edit"), InlineKeyboardButton("Отмена", callback_data="reject_edit")]])
