@@ -41,7 +41,7 @@ async def back_edit_menu(call, state:FSMContext):
             table = data["table"]
             record_id = data['id_' + table]
         rus_name = 'студенты' if table == 'students' else 'кураторы'
-        func_bot.remove_record(record_id=record_id, table=table)
+        # func_bot.remove_record(record_id=record_id, table=table)
         text = f'Удаление, {rus_name}'
     else:
         text = 'Меню редактирования'
@@ -75,6 +75,7 @@ async def edit_record_info(call, state:FSMContext):
         message_id=call.message.message_id,
         chat_id=call.message.chat.id,
         reply_markup=ikb)
+    await state.finish()
     async with state.proxy() as data:
         data[f"id_{table}"] = rec_id
         data["table"] = table
@@ -137,6 +138,7 @@ async def edit_record_feat(call, state:FSMContext):
         data["params"] = [rec_id, feat_name, table, feat_name_rus]
         await FSMAdmin.edit_records_state.set()
 
+
 @dp.message_handler(lambda message: message.text, state=FSMAdmin.edit_records_state)
 async def edit_recod(message, state:FSMContext):
     async with state.proxy() as data:
@@ -145,26 +147,23 @@ async def edit_recod(message, state:FSMContext):
         chat_id = data["edit_call_chat_id"]
         data["answer"] = message.text
         rec_id, feat_name, table, feat_name_rus = params
-    text_info = func_bot.get_info_list(rec_id, table=table)[0]
-    old_value = "".join([i.split(" - ")[1] for i in text_info.splitlines() if feat_name_rus in i.split(" - ")])
-    async with state.proxy() as data:
-        data["old_value"] = old_value
+    cur_value = func_bot.main_get(tables=[table], columns=[feat_name], condition=f"id = {rec_id}", is_one=True)
     await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
     await bot.edit_message_text(
-        text=f"Вы точно хотите изменить {old_value} на {message.text}",
+        text=f"Вы точно хотите изменить {cur_value} на {message.text}",
         message_id=message_id,
         chat_id=chat_id,
         reply_markup=keyboard.accept_and_reject_edit)
+
 
 @dp.callback_query_handler(lambda callback: callback.data in ["accept_edit", "reject_edit"], state=FSMAdmin.edit_records_state)
 async def recject_or_accept_edit(call, state:FSMContext):
     async with state.proxy() as data:
         params = data["params"]
         answer = data["answer"]
-        old_value = data["old_value"]
-    rec_id, feat_name, table, name_rus = params
+    rec_id, feat_name, table, _ = params
     if call.data == "accept_edit":
-        func_bot.passing_func(table, rec_id, answer)
+        func_bot.update_record(table, rec_id, {feat_name: answer})
     #Функция изменения данных по дб
     text, columns = func_bot.get_info_list(rec_id, table=table)
     ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns, table=table)
@@ -174,6 +173,9 @@ async def recject_or_accept_edit(call, state:FSMContext):
         chat_id=call.message.chat.id,
         reply_markup=ikb)
     await state.finish()
+    async with state.proxy() as data:
+        data['table'] = table
+        data['id_' + table] = rec_id 
 
 
 #------------------------------------------------Add------------------------------------------------

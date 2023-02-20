@@ -39,21 +39,23 @@ def create_ikb_records_list(record_id, records_names, type_class, is_search=Fals
     return ikb
 
 
-def create_ikb_info_list(rec_id: int, columns: list, table) -> InlineKeyboardMarkup:
+def create_ikb_info_list(rec_id: int, columns: list, table: str) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     translate = {
-        'Имя': 'name',
+
         'User-id': 'tg-id',
         'User-name': 'tg-user-name',
+        'Имя': 'name',
         'Профессия': 'direction',
-        'Куратор': 'name',
         'SkillCoins': 'account'
     }
-    for i, feat in enumerate(columns):
-        btn = InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}_{translate[feat]}_{feat}_{table}")
-        if (i + 1) % 2 == 0:
-            ikb.add(prev_btn, btn)
-        prev_btn = btn
+    for i, feat in enumerate(translate):
+        if feat in translate.keys():
+            btn = InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}_{translate[feat]}_{feat}_{table}")
+            if (i + 1) % 2 == 0:
+                ikb.add(prev_btn, btn)
+            prev_btn = btn
+    if table == 'students': ikb.add(prev_btn)
     ikb.row(InlineKeyboardButton("Удалить", callback_data="del"), InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
     return ikb
 
@@ -90,7 +92,7 @@ accept_and_reject = InlineKeyboardMarkup(inline_keyboard=[
 
 
 def create_ikb_back_rec_info(rec_id, table):
-    type_class = "std" if table == "students" else "teachers"
+    type_class = "std" if table == "students" else "tch"
     ikb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("Назад", callback_data= f"{type_class}_{rec_id}")]])
     return ikb

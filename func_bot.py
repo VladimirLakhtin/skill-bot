@@ -33,17 +33,20 @@ def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
     cursor.execute(request)
     records = cursor.fetchone() if is_one else cursor.fetchall()
     # return
-    if len(columns) > 1 and not is_one:
-        list_of_columns = []
-        for i in range(len(columns)):
-            if len(records) > 1:
-                list_of_columns.append([rec[i] for rec in records])
-            else:
-                list_of_columns.append(records[0][i])
-        return list_of_columns
-    elif len(columns) == 1:
-        return [rec[0] for rec in records]
-    return records
+
+    if is_one:
+        if len(columns) == 1:
+            return records[0]
+        else:
+            return [rec for rec in records]
+    else:
+        if len(columns) > 1:
+            res = []
+            for i in range(len(columns)):
+                res.append([rec[i] for rec in records])
+            return res
+        else:
+            return [rec[0] for rec in records]
 
 
 #Берём информацию по студенту или куратору по id кнопке
@@ -111,7 +114,14 @@ def get_search_results(table, name):
     return result_id, result_names
 
 
-def passing_func(table, rec_id, answer):
-    pass
+def update_record(table: str, rec_id, columns: dict) -> None:
+    col_val_text = ''
+    for col, val in columns.items():
+        col = col.replace('-', '_')
+        col_val_text += f"{col} = " + (f"{val}" if type(val) == int else f"'{val}'")
+    request = f"UPDATE {table} SET {col_val_text} WHERE id = {rec_id}"
+    cursor.execute(request)
+    connection.commit()
 
-
+if __name__ == "__main__":
+    print('23456')
