@@ -25,29 +25,31 @@ back_add_menu = InlineKeyboardMarkup(inline_keyboard=[[back_add_menu_btn]])
 
 
 #Создание кнопок списка
-def create_ikb_records_list(record_id, records_names, type_class, is_search=False) -> InlineKeyboardMarkup:
+def create_ikb_records_list(rec_id, records_names, type_class, option, std_id=None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     for i, name in enumerate(records_names):
-        ikb.add(InlineKeyboardButton(name, callback_data=f"{type_class}_{record_id[i]}"))
+        ikb.add(InlineKeyboardButton(name, callback_data=f"{type_class}_{rec_id[i]}"))
     if type_class != 'prof': 
-        if is_search:
+        if option == 'search':
             ikb.row(InlineKeyboardButton("Показать всех", callback_data="all_" + type_class), InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
-        else:
+        elif option == 'edit':
             ikb.add(InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
     else:
-        ikb.add(back_add_menu_btn)
+        if option == 'add':
+            ikb.add(back_add_menu_btn)
+        elif option == 'edit':
+            ikb.add(InlineKeyboardButton("Назад", callback_data=f"{'std'}_{std_id}"))
     return ikb
 
 
 def create_ikb_info_list(rec_id: int, columns: list, table: str) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     translate = {
-
         'User-id': 'tg-id',
         'User-name': 'tg-user-name',
         'Имя': 'name',
         'Профессия': 'direction',
-        'SkillCoins': 'account'
+        'SkillCoins': 'score'
     }
     for i, feat in enumerate(translate):
         if feat in translate.keys():

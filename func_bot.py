@@ -124,4 +124,4 @@ def update_record(table: str, rec_id, columns: dict) -> None:
     connection.commit()
 
 if __name__ == "__main__":
-    print('23456')
+    update_record(table='students', rec_id=1, columns={'score': 657})
