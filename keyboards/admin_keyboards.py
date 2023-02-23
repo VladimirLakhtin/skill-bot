@@ -25,16 +25,19 @@ back_add_menu = InlineKeyboardMarkup(inline_keyboard=[[back_add_menu_btn]])
 
 
 #Создание кнопок списка
-def create_ikb_records_list(rec_id, records_names, type_class, option, std_id=None) -> InlineKeyboardMarkup:
+def create_ikb_records_list(rec_id, records_names, type_class, option=None, std_id=None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     for i, name in enumerate(records_names):
         ikb.add(InlineKeyboardButton(name, callback_data=f"{type_class}_{rec_id[i]}"))
-    if type_class != 'prof': 
+    back_edit = InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit")
+    if type_class == "awards" or type_class == "tasks":
+        ikb.add(back_edit)
+    elif type_class != 'prof':
         if option == 'search':
             ikb.row(InlineKeyboardButton("Показать всех", callback_data="all_" + type_class), InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
         elif option == 'edit':
-            ikb.add(InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
-    else:
+            ikb.add(back_edit)
+    elif type_class == "prof":
         if option == 'add':
             ikb.add(back_add_menu_btn)
         elif option == 'edit':
@@ -42,36 +45,37 @@ def create_ikb_records_list(rec_id, records_names, type_class, option, std_id=No
     return ikb
 
 
-def create_ikb_info_list(rec_id: int, columns: list, table: str) -> InlineKeyboardMarkup:
+def create_ikb_info_list(rec_id: int, columns: dict, table: str) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
-    translate = {
-        'User-id': 'tg-id',
-        'User-name': 'tg-user-name',
-        'Имя': 'name',
-        'Профессия': 'direction',
-        'SkillCoins': 'score'
-    }
-    for i, feat in enumerate(translate):
-        if feat in translate.keys():
-            btn = InlineKeyboardButton(feat, callback_data=f"feat_{rec_id}_{translate[feat]}_{feat}_{table}")
-            if (i + 1) % 2 == 0:
-                ikb.add(prev_btn, btn)
-            prev_btn = btn
-    if table == 'students': ikb.add(prev_btn)
-    ikb.row(InlineKeyboardButton("Удалить", callback_data="del"), InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
+    count = 0
+    for feat in columns:
+        count += 1
+        btn = InlineKeyboardButton(columns[feat], callback_data=f"feat_{rec_id}_{feat}_{columns[feat]}_{table}")
+        if count % 2 == 0:
+            ikb.add(prev_btn, btn)
+        prev_btn = btn
+    if table == 'teachers':
+        ikb.add(prev_btn)
+    if table == "teachers":
+        ikb.row(InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
+    else:
+        ikb.row(InlineKeyboardButton("Удалить", callback_data="del"), InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit"))
+
     return ikb
 
     
 #Кнопки учителя студента и типа
 back_main_menu_btn = InlineKeyboardButton("В главное меню", callback_data="back_main_menu")
 add_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton("Куратор", callback_data="add_tch"), InlineKeyboardButton("Студент", callback_data="add_std")],
+    [InlineKeyboardButton("Куратор", callback_data="add_teachers"), InlineKeyboardButton("Студент", callback_data="add_students")],
+    [InlineKeyboardButton("Награду", callback_data="add_awards"), InlineKeyboardButton("Задания", callback_data="add_tasks")],
     [InlineKeyboardButton("В главное меню", callback_data="back_main_menu")]
 ])
 
 #Кнопки учителя студента поиска
 edit_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Куратор", callback_data="edit_tch"), InlineKeyboardButton("Студент", callback_data="edit_std")],
+    [InlineKeyboardButton("Награду", callback_data="awards_edit"), InlineKeyboardButton("Задания", callback_data="tasks_edit")],
     [back_main_menu_btn]
 ])
 
@@ -94,7 +98,14 @@ accept_and_reject = InlineKeyboardMarkup(inline_keyboard=[
 
 
 def create_ikb_back_rec_info(rec_id, table):
-    type_class = "std" if table == "students" else "tch"
+    if table == "students":
+        type_class = "std"
+    elif table == "teachers":
+        type_class = "tch"
+    elif table == "awards":
+        type_class = "awards"
+    else:
+        type_class = "tasks"
     ikb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("Назад", callback_data= f"{type_class}_{rec_id}")]])
     return ikb

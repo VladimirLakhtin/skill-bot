@@ -6,6 +6,16 @@ import difflib
 connection = sqlite3.connect("db.db")
 cursor = connection.cursor()
 
+translate = {
+    'tg_id': 'User-id',
+    'tg_username': 'User-name',
+    'name': 'Имя',
+    'direction': 'Профессия',
+    'score': 'SkillCoins',
+    'title': 'Название',
+    'cost': 'Цена',
+    'reward': 'Награда',
+}
 
 #Список данных из бд
 def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
@@ -51,25 +61,31 @@ def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
 
 #Берём информацию по студенту или куратору по id кнопке
 def get_info_list(record_id: str, table: str):
-    columns = [f'{table}.id', f'{table}.name', 'direction', f'{table}.tg_username']
-    tables = ['teachers']
+    tables = [table]
     if table == 'students':
-        columns.append('score')
-        columns.append('teachers.name')
+        columns = ['students.id', 'students.name', 'teachers.direction', 'students.tg_username', 'students.score', 'teachers.name']
         tables = ['students', 'teachers']
+    elif table == 'teachers':
+        columns = ['id', 'name', 'direction', 'tg_username']
+    elif table == 'awards':
+        columns = ['id', 'title', 'cost']
+    elif table == 'tasks':
+        columns = ['id', 'title', 'reward']
     list_info = main_get(
         tables=tables, 
         columns=columns, 
         condition=f"{table}.id == {record_id}",
         is_one=True
     )
-    text_info = f"ID - {list_info[0]}\nИмя - {list_info[1]}\nПрофессия - {list_info[2]}\nUser-name - {list_info[3]}"
-    columns = ['User-id','Имя', 'User-name', 'Профессия']
     if table == 'students':
-        text_info += f'\nSkillCoins - {list_info[4]}\nКуратор - {list_info[5]}'
-        columns.append('Куратор')
-        columns.append('SkillCoins')
-
+        text_info = f"Имя - {list_info[1]}\nПрофессия - {list_info[2]}\nUser-name - {list_info[3]}\nSkillCoins - {list_info[4]}\nКуратор - {list_info[5]}"
+        columns = [col.split('.')[-1] for col in columns]
+    elif table == 'teachers':
+        text_info = f"Имя - {list_info[1]}\nПрофессия - {list_info[2]}\nUser-name - {list_info[3]}"
+    elif table == 'awards' or table == 'tasks':
+        title = "Цена" if table == "awards" else "Награда"
+        text_info = f"Название - {list_info[1]}\n{title}: {list_info[2]} SkillCoins"
+    columns = {key.replace('_', '-'): val for (key, val) in translate.items() if key in columns}
     return text_info, columns
 
 
@@ -120,6 +136,7 @@ def update_record(table: str, rec_id, columns: dict) -> None:
         col = col.replace('-', '_')
         col_val_text += f"{col} = " + (f"{val}" if type(val) == int else f"'{val}'")
     request = f"UPDATE {table} SET {col_val_text} WHERE id = {rec_id}"
+    print(request)
     cursor.execute(request)
     connection.commit()
 

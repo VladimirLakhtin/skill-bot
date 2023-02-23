@@ -21,4 +21,20 @@ def cheak_input_text(name, key):
             list_exept_sym = "|".join(list_exept_sym)
             text = f"В {key} не должены стоять символы: {list_exept_sym}"
             return text, "bad"
-#TODO: тоже самое надо добавить для тг id
+
+def input_edit(inputs, column):
+    if column in ["reward", "cost", "score"]:
+        flag = inputs.isdigit() and int(inputs) >= 0
+        if not flag:
+            text = 'Введите именно положительное число'
+        else:
+            text = ""
+        return flag, text
+    elif column == "name":
+        flag = len(inputs.split()) == 2
+        if not flag:
+            text = "Введите имя и фамилию"
+        else:
+            text = ""
+        return flag, text
+    return True
