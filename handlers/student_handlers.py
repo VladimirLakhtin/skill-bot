@@ -35,7 +35,8 @@ async def back_main_menu(call):
 # Cheak SkillCoins account
 @dp.callback_query_handler(keyboard.cd_main_menu.filter(chapter='cheak'))
 async def cheak_account(call):
-    score = func_bot.main_get(tables=['students'], columns=['score'], condition=f'id = {call.message.chat.id}')
+    print(call.message.chat.id)
+    score = func_bot.main_get(tables=['students'], columns=['score'], condition=f'tg_id = {call.message.chat.id}')[0]
     await main_edit_mes(text=f'Твой счёт: {score}', ikb=keyboard.get_back(), call=call)
 
 
@@ -60,10 +61,10 @@ async def ways_to_spend(call):
 # Accept or reject purchase
 @dp.callback_query_handler(keyboard.cd_spend.filter())
 async def purchase_confirmation(call, callback_data: dict):
-    score = func_bot.main_get(tables=['students'], columns=['score'], condition=f'tg_id = {call.message.chat.id}')
-    if score >= callback_data['cost']:
+    score = func_bot.main_get(tables=['students'], columns=['score'], condition=f'tg_id = {call.message.chat.id}')[0]
+    if score >= int(callback_data['cost']):
         text = 'Yes or not'
-        await main_edit_mes(text=text, ikb=keyboard.get_confirmation(callback_data['cost']), call=call)
+        await main_edit_mes(text=text, ikb=keyboard.get_confirmation(callback_data['id'], callback_data['title'], callback_data['cost']), call=call)
     else:
         await call.answer('Недостаточно средств')
 
@@ -72,6 +73,6 @@ async def purchase_confirmation(call, callback_data: dict):
 @dp.callback_query_handler(keyboard.cd_purchase.filter())
 async def purchse_end(call, callback_data):
     std_id, score = func_bot.main_get(tables=['students'], columns=['id', 'score'], condition=f'tg_id = {call.message.chat.id}')
-    func_bot.update_record(table='students', rec_id=std_id, columns={'score': score - callback_data['cost']})
+    func_bot.update_record(table='students', rec_id=std_id[0], columns={'score': score[0] - int(callback_data['cost'])})
     text = f'Purchase is done: {callback_data["title"]}\nSpend, please ->'
     await main_edit_mes(text=text, ikb=keyboard.get_list_spend(), call=call)

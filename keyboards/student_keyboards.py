@@ -16,7 +16,7 @@ def get_main_menu():
 
 
 def get_list_spend():
-    rec_id, titles, costs = func_bot.main_get(tables=['awards'], columns=['id', 'name', 'cost'])
+    rec_id, titles, costs = func_bot.main_get(tables=['awards'], columns=['id', 'title', 'cost'])
     ikb = InlineKeyboardMarkup()
     for i, id in enumerate(rec_id):
         ikb.add(InlineKeyboardButton(titles[i] + ' ' + str(costs[i]), callback_data=cd_spend.new(id=id, title=titles[i], cost=costs[i])))
