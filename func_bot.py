@@ -40,6 +40,7 @@ def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
 
     # request
     request = f"""SELECT {columns_text} FROM {tables} {condition}"""
+    print(request)
     cursor.execute(request)
     records = cursor.fetchone() if is_one else cursor.fetchall()
     # return
