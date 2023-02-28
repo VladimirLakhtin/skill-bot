@@ -2,7 +2,7 @@ import data_checking
 import keyboards.admin_keyboards as keyboard
 
 from create_bot import bot, dp
-from state import FSMAddRecord, FSMContext, FSMEditFeat, FSMSeachRecord
+from state import FSMAddRecord, FSMContext, FSMEditFeat, FSMSeachRecord, FSMSeachStudent
 
 import func_bot
 
@@ -21,17 +21,17 @@ async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
 #------------------------------------------------Main------------------------------------------------
 
 # Main menu
-#@dp.message_handler(commands=['start'])
-#async def start_handler(message):
-#    await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}", reply_markup=keyboard.kb_main)
+@dp.message_handler(commands=['start'])
+async def start_handler(message):
+   await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}", reply_markup=keyboard.kb_main)
 
 
 # Back to main menu
-# @dp.callback_query_handler(lambda callback: callback.data == "back_main_menu")
-# async def back_main_menu(call, state:FSMContext):
-#     await state.finish()
-#     text = f"Добро пожаловать в главное мнею {call.message.from_user.first_name}"
-#     await main_edit_mes(text=text, ikb=keyboard.kb_main, call=call)
+@dp.callback_query_handler(lambda callback: callback.data == "back_main_menu")
+async def back_main_menu(call, state:FSMContext):
+    await state.finish()
+    text = f"Добро пожаловать в главное мнею {call.message.from_user.first_name}"
+    await main_edit_mes(text=text, ikb=keyboard.kb_main, call=call)
 
 
 #------------------------------------------------Edit------------------------------------------------
@@ -68,6 +68,7 @@ async def get_title_list(call, state:FSMContext):
     async with state.proxy() as data:
         data["table"] = table
 
+
 @dp.callback_query_handler(lambda callback: callback.data.startswith("awards") or callback.data.startswith("tasks"), state="*")
 async def get_record_info_title(call, state:FSMContext):
     async with state.proxy() as data:
@@ -82,9 +83,8 @@ async def get_record_info_title(call, state:FSMContext):
     await state.finish()
 
 
-
 # List of all records to edit
-@dp.callback_query_handler(lambda callback: callback.data.startswith('all'), state="*")
+@dp.callback_query_handler(lambda callback: callback.data.startswith('all_'), state="*")
 async def edit_all_records_list(call, state:FSMContext):
     table, rus_name, prefix = ['students', 'студенты', 'std'] if call.data == 'all_std' else ['teachers', 'учителя', 'tch']
     record_id, records_names = func_bot.main_get(tables=[table], columns=['id', 'name'])
@@ -430,3 +430,77 @@ async def add_or_back_menu(call, state:FSMContext):
         await main_edit_mes(text=text, ikb=keyboard.add_menu, call=call)
         await state.finish()
 
+
+#----------------------------------------------AddCoins----------------------------------------------
+
+# Search students
+@dp.callback_query_handler(text='coins_add')
+async def search_student_handler(call, state:FSMContext):
+    ikb = keyboard.students_list()
+    text = f"Введите имя или фамилию студента которого хотите найти:"
+    await main_edit_mes(text=text, ikb=ikb, call=call)
+    async with state.proxy() as data:
+        data["message_search_id"] = call.message.message_id
+        data["chat_search_id"] = call.message.chat.id
+    await FSMSeachStudent.search_name_state.set()
+
+
+# Show of search results
+@dp.message_handler(lambda message: message.text, state=FSMSeachStudent.search_name_state)
+async def search_result_student(message, state: FSMContext):
+    async with state.proxy() as data:
+        message_id = data["message_search_id"]
+        chat_id = data["chat_search_id"]
+    records_id, records_name = func_bot.get_search_results(table='students', name=message.text)
+    await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
+    ikb = keyboard.students_list(records_id, records_name)
+    if records_id:
+        text = f"Сутденты по запросу:"
+        await state.finish()
+    else:
+        text = "Сходства не найдены, попробуй еще раз или выведи всех:"
+        await FSMSeachStudent.search_name_state.set()
+    await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
+
+
+# Show all
+@dp.callback_query_handler(text='allstd4tch', state=FSMSeachStudent.search_name_state)
+async def all_student(call, state: FSMContext):
+    record_id, records_names = func_bot.main_get(tables=['students'], columns=['id', 'name'])
+    ikb = keyboard.students_list(record_id, records_names, is_all=True)
+    text = f"Все студенты SkillBox"
+    await main_edit_mes(text=text, ikb=ikb, call=call)
+    await state.finish()
+
+
+# Choose student
+@dp.callback_query_handler(lambda call: call.data.startswith('choose_std'))
+async def choose_task(call, state: FSMContext):
+    async with state.proxy() as data:
+        data['std_info'] = call.data.split('_')[2:]
+    task_id, task_titles, cost = func_bot.main_get(tables=['tasks'])
+    ikb = keyboard.tasks_list(task_id, task_titles, cost)
+    text = 'Теперь выбери причину начисления:'
+    await main_edit_mes(text=text, ikb=ikb, call=call)
+
+
+# Accept adding SkillCoins
+@dp.callback_query_handler(lambda call: call.data.startswith('choose_task'))
+async def choose_task(call, state: FSMContext):
+    async with state.proxy() as data:
+        _, std_name = data['std_info']
+        data['task_info'] = call.data.split('_')[2:]
+    ikb = keyboard.accept_add_coins()
+    text = f'Хотите добавить SkillCoins {std_name} за {call.data.split("_")[3]}'
+    await main_edit_mes(text=text, ikb=ikb, call=call)
+
+
+# Add SkillCoins
+@dp.callback_query_handler(text='coins_add_accept')
+async def choose_task(call, state: FSMContext):
+    async with state.proxy() as data:
+        std_id, _ = data['std_info']
+        _, _, cost = data['task_info']
+    text = 'Добавлены SkillCoins'
+    func_bot.add_skillcoins(std_id=std_id, coins=cost) 
+    await main_edit_mes(text=text, ikb=keyboard.kb_main, call=call)

@@ -21,6 +21,10 @@ class FSMSeachRecord(StatesGroup):
     search_name_state = State()
 
 
+class FSMSeachStudent(StatesGroup):
+    search_name_state = State()
+
+
 class FSMDeveloper(StatesGroup):
     add_name_admin_state = State()
     add_id_admin_state = State()

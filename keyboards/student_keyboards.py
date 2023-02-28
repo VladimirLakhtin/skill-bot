@@ -3,7 +3,7 @@ from aiogram.utils.callback_data import CallbackData
 import func_bot
 
 
-cd_main_menu = CallbackData('std_main', 'chapter')
+cd_main_menu = CallbackData('main_menu_std', 'chapter')
 cd_spend = CallbackData('spend_list', 'id', 'title', 'cost')
 cd_purchase = CallbackData('purchase_accept', 'id', 'title', 'cost')
 

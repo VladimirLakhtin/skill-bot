@@ -72,6 +72,7 @@ async def add_id_admin(message, state:FSMContext):
       await main_edit_mes(text=f"Имя админа: {name}\nID админа: {message.text}", chat_id=chat_id, message_id=message_id, ikb=keyboard.accept_or_reject_add_admin)
       await FSMDeveloper.next()
 
+
 @dp.callback_query_handler(lambda callback: callback.data in ["accept_add_admin", "reject_add_admin"], state=FSMDeveloper.accept_or_reject_admin_state)
 async def accept_or_reject_add_admins(call, state:FSMContext):
    if call.data == "accept_add_admin":

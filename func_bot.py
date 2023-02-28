@@ -27,10 +27,13 @@ def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
     # SELECT param
     if len(columns) > 1:
         columns_text = ', '.join(columns)
+        one_col = False
     elif len(columns) == 1:
         columns_text = columns[0]
+        one_col = True
     else:
         columns_text = '*'
+        one_col = False
 
     # FROM param
     if len(tables) == 2:
@@ -40,20 +43,19 @@ def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
 
     # request
     request = f"""SELECT {columns_text} FROM {tables} {condition}"""
-    print(request)
     cursor.execute(request)
     records = cursor.fetchone() if is_one else cursor.fetchall()
+    
     # return
-
     if is_one:
-        if len(columns) == 1:
+        if one_col:
             return records[0]
         else:
             return [rec for rec in records]
     else:
-        if len(columns) > 1:
+        if not one_col:
             res = []
-            for i in range(len(columns)):
+            for i in range(len(records[0])):
                 res.append([rec[i] for rec in records])
             return res
         else:
@@ -137,9 +139,14 @@ def update_record(table: str, rec_id, columns: dict) -> None:
         col = col.replace('-', '_')
         col_val_text += f"{col} = " + (f"{val}" if type(val) == int else f"'{val}'")
     request = f"UPDATE {table} SET {col_val_text} WHERE id = {rec_id}"
-    print(request)
     cursor.execute(request)
     connection.commit()
+
+
+def add_skillcoins(std_id, coins):
+    cur_score = main_get(tables=['students'], columns=['score'], condition=f'students.id = {std_id}', is_one=True)
+    new_score = int(cur_score) + int(coins)
+    update_record(table='students', rec_id=std_id, columns={'score':new_score})
 
 if __name__ == "__main__":
     update_record(table='students', rec_id=1, columns={'score': 657})

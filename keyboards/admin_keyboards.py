@@ -2,8 +2,8 @@ from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup,  InlineKeyb
 
 # Кнопки админа
 kb_main = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton("Добавить", callback_data="add"), InlineKeyboardButton("Обновить логи", callback_data="update"), InlineKeyboardButton("Редактировать", callback_data="edit")],
-    [InlineKeyboardButton("Получить файл бд", callback_data="file_db")],
+    [InlineKeyboardButton("Добавить", callback_data="add"), InlineKeyboardButton("Редактировать", callback_data="edit")],
+    [InlineKeyboardButton("Добавить SkillCoins", callback_data="coins_add")]
 ])
 
 # Назад и Удалить
@@ -13,9 +13,10 @@ butt_back_and_del_search = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 
-def create_ikb_back_edit_menu(type_class: str):
+def create_ikb_back_edit_menu(type_class: str, is_tch=False):
+    callback_data = 'main_tch_menu' if is_tch else 'back_menu_edit'
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("Показать всех", callback_data="all_" + type_class), InlineKeyboardButton("Назад в меню", callback_data="back_menu_edit")]
+        [InlineKeyboardButton("Показать всех", callback_data="all_" + type_class), InlineKeyboardButton("Назад в меню", callback_data=callback_data)]
     ])
 
 
@@ -112,3 +113,31 @@ def create_ikb_back_rec_info(rec_id, table):
 
 accept_and_reject_edit = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Принять", callback_data="accept_edit"), InlineKeyboardButton("Отмена", callback_data="reject_edit")]])
+
+# Add SkillCoins
+
+def students_list(rec_id=None, rec_names=None, is_all=False) -> InlineKeyboardMarkup:
+    ikb = InlineKeyboardMarkup()
+    if rec_id and rec_names:
+        for i, name in zip(rec_id, rec_names):
+            ikb.add(InlineKeyboardButton(name, callback_data=f'choose_std_{i}_{name}'))
+    if is_all:
+        ikb.add(InlineKeyboardButton("Назад", callback_data='back_main_menu'))
+    else:
+        ikb.row(InlineKeyboardButton("Показать всех", callback_data='allstd4tch'), InlineKeyboardButton("Назад", callback_data='back_main_menu'))
+    return ikb
+
+
+def tasks_list(rec_id=None, rec_title=None, rec_cost=None) -> InlineKeyboardMarkup:
+    ikb = InlineKeyboardMarkup()
+    if rec_id and rec_title and rec_cost:
+        for i, title, cost in zip(rec_id, rec_title, rec_cost):
+            ikb.add(InlineKeyboardButton(title, callback_data=f'choose_task_{i}_{title}_{cost}'))
+    ikb.add(InlineKeyboardButton("Назад", callback_data='back_main_menu'))
+    return ikb
+
+
+def accept_add_coins():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton("Добавить", callback_data="coins_add_accept"), InlineKeyboardButton("Отмена", callback_data="back_main_menu")],
+    ])
