@@ -74,6 +74,8 @@ def get_info_list(record_id: str, table: str):
         columns = ['id', 'title', 'cost']
     elif table == 'tasks':
         columns = ['id', 'title', 'reward']
+    elif table == "admins":
+        columns = ['id', 'name', 'tg_id']
     list_info = main_get(
         tables=tables, 
         columns=columns, 
@@ -88,6 +90,8 @@ def get_info_list(record_id: str, table: str):
     elif table == 'awards' or table == 'tasks':
         title = "Цена" if table == "awards" else "Награда"
         text_info = f"Название - {list_info[1]}\n{title}: {list_info[2]} SkillCoins"
+    elif table == "admins":
+        text_info = f"Информация об админе\nИмя: {list_info[1]}\nTG-ID: {list_info[2]}"
     columns = {key.replace('_', '-'): val for (key, val) in translate.items() if key in columns}
     return text_info, columns
 
@@ -98,7 +102,6 @@ def remove_record(record_id: str, table: str) -> None:
     connection.commit()
 
 
-#Добавляем тип профессии
 def add_record(table: str, params: dict) -> None:
     values = [str(p) if type(p) != str else p for p in params.values()]
     request = f"""INSERT INTO {table} ({', '.join(params.keys())}) VALUES ({', '.join(values)})"""

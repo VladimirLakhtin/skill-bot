@@ -1,5 +1,5 @@
 from aiogram import *
-from handlers.teacher_handlers import dp
+from handlers.developer_handlers import dp
 from state import FSMContext
 
 

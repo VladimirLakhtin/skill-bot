@@ -21,9 +21,9 @@ async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
 #------------------------------------------------Main------------------------------------------------
 
 # Main menu
-@dp.message_handler(commands=['start'])
-async def start_handler(message):
-   await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}", reply_markup=keyboard.kb_main)
+# @dp.message_handler(commands=['start'])
+# async def start_handler(message):
+#    await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}", reply_markup=keyboard.kb_main)
 
 
 # Back to main menu

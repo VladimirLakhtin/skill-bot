@@ -29,3 +29,4 @@ class FSMDeveloper(StatesGroup):
     add_name_admin_state = State()
     add_id_admin_state = State()
     accept_or_reject_admin_state = State()
+    edit_admin_state = State()
