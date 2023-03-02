@@ -37,4 +37,4 @@ def input_edit(inputs, column):
         else:
             text = ""
         return flag, text
-    return True
+    return True, None

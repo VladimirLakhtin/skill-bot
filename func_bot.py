@@ -1,6 +1,6 @@
 import sqlite3
 import difflib
-
+from create_bot import bot, dp
 
 #Конект с БД
 connection = sqlite3.connect("db.db")
@@ -49,7 +49,7 @@ def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
     # return
 
     if not records:
-        return ([] for _ in columns)
+        return [[] for _ in columns]
 
     if is_one:
         if one_col:
@@ -154,6 +154,19 @@ def add_skillcoins(std_id, coins):
     cur_score = main_get(tables=['students'], columns=['score'], condition=f'students.id = {std_id}', is_one=True)
     new_score = int(cur_score) + int(coins)
     update_record(table='students', rec_id=std_id, columns={'score':new_score})
+
+
+async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
+    if message_id == None and call != None:
+        message_id = call.message.message_id
+    if chat_id == None and call != None:
+        chat_id = call.message.chat.id
+    await bot.edit_message_text(
+        text=text,
+        message_id=message_id,
+        chat_id=chat_id,
+        reply_markup=ikb)
+
 
 if __name__ == "__main__":
     update_record(table='students', rec_id=1, columns={'score': 657})
