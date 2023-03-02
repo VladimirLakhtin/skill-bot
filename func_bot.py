@@ -47,6 +47,10 @@ def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
     records = cursor.fetchone() if is_one else cursor.fetchall()
     
     # return
+
+    if not records:
+        return ([] for _ in columns)
+
     if is_one:
         if one_col:
             return records[0]
