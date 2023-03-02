@@ -112,8 +112,10 @@ async def get_list_admins(call):
    ikb = keyboard.create_list_admins_ikb(records_name=rec_name, rec_id=rec_id)
    await main_edit_mes(text="Все админы", call=call, ikb=ikb)
 
-@dp.callback_query_handler(lambda callback: callback.data.startswith("admins_"), state=[FSMDeveloper.edit_admin_state, None])
+@dp.callback_query_handler(lambda callback: callback.data.startswith("admins_"), state="*")
 async def edit_info_admins(call, state:FSMContext):
+   p = await state.get_state()
+   print(p)
    await state.finish()
    _, rec_id = call.data.split("_")
    info_text, colums = func_bot.get_info_list(rec_id, "admins")
@@ -153,9 +155,12 @@ async def edit_record_admin(message, state:FSMContext):
           pass
    else:
       func_bot.update_record("admins", columns={feet_name:message.text}, rec_id=rec_id)
-      info_text, _ = func_bot.get_info_list(rec_id, "admins")
+      info_text, colums = func_bot.get_info_list(rec_id, "admins")
       await main_edit_mes(text=info_text, chat_id=chat_id, message_id=message_id, ikb=keyboard.edit_admin_ikb)
       await state.finish()
+      async with state.proxy() as data:
+         data["rec_id_admin"] = rec_id
+         data["colums_admin"] = colums
    await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
 
 
@@ -164,7 +169,7 @@ async def del_admin(call, state:FSMContext):
    async with state.proxy() as data:
       rec_id = data["rec_id_admin"]
    func_bot.remove_record(rec_id, "admins")
-   rec_name, rec_id = func_bot.main_get(tables=["admins"], columns=["name", "id"])
+   rec_name, rec_id = func_bot.main_get(tables=["admins"], columns=["name", "id"], condition=f"id = {rec_id}", is_one=True)
    ikb = keyboard.create_list_admins_ikb(records_name=rec_name, rec_id=rec_id)
    await main_edit_mes(text="Админ удалён", call=call, ikb=ikb)
 
