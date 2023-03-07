@@ -3,7 +3,7 @@ from aiogram.types import InlineKeyboardMarkup,  InlineKeyboardButton
 # Кнопки админа
 kb_main = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Добавить ➕", callback_data="add"), InlineKeyboardButton("Редактировать 🖋", callback_data="edit")],
-    [InlineKeyboardButton("Добавить SkillCoins 💎", callback_data="coins_add")]
+    [InlineKeyboardButton("Добавить SkillCoins 💎", callback_data="coins_add"), InlineKeyboardButton("Топ студентов", callback_data="top")]
 ])
 
 # Назад и Удалить
@@ -67,6 +67,7 @@ def create_ikb_info_list(rec_id: int, columns: dict, table: str) -> InlineKeyboa
     
 #Кнопки учителя студента и типа
 back_main_menu_btn = InlineKeyboardButton("В главное меню 🏠", callback_data="back_main_menu")
+back_main_menu = InlineKeyboardMarkup(inline_keyboard=[[back_main_menu_btn]])
 add_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Куратор 💼", callback_data="add_teachers"), InlineKeyboardButton("Студент 👤", callback_data="add_students")],
     [InlineKeyboardButton("Награду 💰", callback_data="add_awards"), InlineKeyboardButton("Задания 📎", callback_data="add_tasks")],
