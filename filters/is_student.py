@@ -2,6 +2,7 @@ from aiogram.types import Message
 from aiogram.dispatcher.filters import BoundFilter
 from func_bot import main_get, update_record
 
+
 class IsStudent(BoundFilter):
     async def check(self, message: Message):
         students_tg_id, students_usernames, students_id = main_get(tables=["students"], columns=["tg_id", "tg_username", "id"])

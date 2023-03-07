@@ -114,10 +114,11 @@ def add_record(table: str, params: dict) -> None:
 
 
 #Возвращаем список поиска студентов или кураторов при помощи вероятности совпадения букв в фамилии и в имени
-def get_search_results(table, name):
+def get_search_results(table, name, teacher_id=None):
     result_id, result_names = [], []
     prob = 0.7
-    id_list, names_list = main_get(tables=[table], columns=['id', 'name'])
+    condition = f'teacher_id = {teacher_id}' if teacher_id else None
+    id_list, names_list = main_get(tables=[table], columns=['id', 'name'], condition=condition)
     names_split_list = [i.split() for i in names_list]
     name = name.lower().split()
     for i, cur_name in enumerate(names_split_list):

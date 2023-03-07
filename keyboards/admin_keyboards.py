@@ -13,10 +13,9 @@ butt_back_and_del_search = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 
-def create_ikb_back_edit_menu(type_class: str, is_tch=False):
-    callback_data = 'main_tch_menu' if is_tch else 'back_menu_edit'
+def create_ikb_back_edit_menu(type_class: str):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("Показать всех 🔍", callback_data="all_" + type_class), InlineKeyboardButton("🔙 Назад в меню", callback_data=callback_data)]
+        [InlineKeyboardButton("Показать всех 🔍", callback_data="all_" + type_class), InlineKeyboardButton("🔙 Назад в меню", callback_data='back_menu_edit')]
     ])
 
 

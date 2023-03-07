@@ -25,16 +25,10 @@ def cheak_input_text(name, key):
 def input_edit(inputs, column):
     if column in ["reward", "cost", "score"]:
         flag = inputs.isdigit() and int(inputs) >= 0
-        if not flag:
-            text = 'Введите именно положительное число'
-        else:
-            text = ""
+        text = "Введите положительное число" if not flag else ""
         return flag, text
     elif column == "name":
         flag = len(inputs.split()) == 2
-        if not flag:
-            text = "Введите имя и фамилию"
-        else:
-            text = ""
+        text = "Введите имя и фамилию" if not flag else ""
         return flag, text
     return True, None

@@ -49,6 +49,7 @@ async def input_title(message, state:FSMContext):
     await main_edit_mes(text=mini_text, ikb=keyboard.back_add_menu, message_id=message_id, chat_id=chat_id)
     await FSMAddRecord.state_cost.set()
 
+
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_cost)
 async def input_cost(message, state:FSMContext):
     async with state.proxy() as data:
