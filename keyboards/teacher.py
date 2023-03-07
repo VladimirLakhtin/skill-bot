@@ -29,14 +29,16 @@ def back_edit_menu(students):
     ])
 
 # Show result of search or all students
-def create_ikb_records_list(rec_id=[], rec_names=[], is_all=False) -> InlineKeyboardMarkup:
+def create_ikb_records_list(rec_id=[], rec_names=[], is_all=False, is_edit=True) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     for i, name in zip(rec_id, rec_names):
-        ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=f"std_{i}"))
+        cb_data = f'std_{i}' if is_edit else f'choose_std_{i}_{name}'
+        ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=cb_data))
     if is_all:
         ikb.add(InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
     else:
-        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data="all"), InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
+        cb_data = 'all' if is_edit else 'allstd4tch'
+        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data=cb_data), InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
     return ikb
 
 
@@ -65,19 +67,6 @@ def accept_and_reject_edit():
 
 
 # Add SkillCoins
-
-# Show student 
-def students_list(rec_id=None, rec_names=None, is_all=False) -> InlineKeyboardMarkup:
-    ikb = InlineKeyboardMarkup()
-    if rec_id and rec_names:
-        for i, name in zip(rec_id, rec_names):
-            ikb.add(InlineKeyboardButton(name, callback_data=f'choose_std_{i}_{name}'))
-    if is_all:
-        ikb.add(InlineKeyboardButton("🔙 Назад", callback_data='back_main_menu'))
-    else:
-        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data='allstd4tch'), InlineKeyboardButton("🔙 Назад в меню", callback_data='back_main_menu'))
-    return ikb
-
 
 def tasks_list(rec_id=None, rec_title=None, rec_cost=None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
