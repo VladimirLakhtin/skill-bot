@@ -14,6 +14,7 @@ back_main_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton("Н
 
 # Add Students
 
+# Request accept or reject add new student
 accept_or_reject = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("✅ Принять ✅", callback_data="accept"), InlineKeyboardButton("❌ Отмена ❌", callback_data="reject")]
 ])
@@ -21,12 +22,13 @@ accept_or_reject = InlineKeyboardMarkup(inline_keyboard=[
 
 # Edit Students
 
+# Edit menu
 def back_edit_menu(students):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("Показать всех 🔍", callback_data="all"), InlineKeyboardButton("🔙 Назад в меню", callback_data='back_main_menu')]
     ])
 
-
+# Show result of search or all students
 def create_ikb_records_list(rec_id=[], rec_names=[], is_all=False) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     for i, name in zip(rec_id, rec_names):
@@ -38,6 +40,7 @@ def create_ikb_records_list(rec_id=[], rec_names=[], is_all=False) -> InlineKeyb
     return ikb
 
 
+# Show student info
 def create_ikb_info_list(rec_id: int, columns: dict) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton('Имя', callback_data=f"feat_{rec_id}_name_Имя"), InlineKeyboardButton('User name', callback_data=f"feat_{rec_id}_tg-username_User-name")],
@@ -47,12 +50,14 @@ def create_ikb_info_list(rec_id: int, columns: dict) -> InlineKeyboardMarkup:
     return ikb
 
 
+# Back to student info
 def create_ikb_back_rec_info(rec_id):
     ikb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("🔙 Назад", callback_data= f"std_{rec_id}")]])
     return ikb
 
 
+# Request accept or reject edit student feat
 def accept_and_reject_edit():
     return InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("✅ Принять ✅", callback_data="accept_edit"), InlineKeyboardButton("❌ Отмена ❌", callback_data="reject_edit")]
@@ -61,6 +66,7 @@ def accept_and_reject_edit():
 
 # Add SkillCoins
 
+# Show student 
 def students_list(rec_id=None, rec_names=None, is_all=False) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     if rec_id and rec_names:
