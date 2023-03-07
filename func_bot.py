@@ -168,5 +168,12 @@ async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
         reply_markup=ikb)
 
 
+def get_top_std():
+    request = "SELECT name, score FROM students ORDER BY score DESC LIMIT 10"
+    cursor.execute(request)
+    records = cursor.fetchall()
+    return records
+
+
 if __name__ == "__main__":
-    update_record(table='students', rec_id=1, columns={'score': 657})
+    print(get_top_std())
