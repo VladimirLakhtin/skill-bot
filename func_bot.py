@@ -169,8 +169,9 @@ async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
         reply_markup=ikb)
 
 
-def get_top_std():
-    request = "SELECT name, score FROM students ORDER BY score DESC LIMIT 10"
+def get_top_std(teacher_id=None):
+    condition = f' WHERE teacher_id = {teacher_id}' if teacher_id else ''
+    request = f"SELECT students.name, score FROM students INNER JOIN teachers ON teacher_id == teachers.id{condition} ORDER BY score DESC LIMIT 10"
     cursor.execute(request)
     records = cursor.fetchall()
     return records
