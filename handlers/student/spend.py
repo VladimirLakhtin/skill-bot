@@ -24,7 +24,10 @@ async def purchase_confirmation(call, callback_data: dict):
 # Purchase end and back to spend menu
 @dp.callback_query_handler(IsStudent(), keyboard.cd_purchase.filter())
 async def purchse_end(call, callback_data):
-    std_id, score = main_get(tables=['students'], columns=['id', 'score'], condition=f'tg_id = {call.message.chat.id}')
-    update_record(table='students', rec_id=std_id[0], columns={'score': score[0] - int(callback_data['cost'])})
+    cost, title = callback_data['cost'], callback_data['title']
+    std_id, score, name = main_get(tables=['students'], columns=['id', 'score', "name"], condition=f'tg_id = {call.message.chat.id}')
+    update_record(table='students', rec_id=std_id[0], columns={'score': score[0] - int(cost)})
+    text_admin = f"{name[0]} Потратил {cost} на {title}"
+    await bot.send_message(text=text_admin, chat_id="-1001881010069")
     text = f'Purchase is done: {callback_data["title"]}\nSpend, please ->'
     await main_edit_mes(text=text, ikb=keyboard.get_list_spend(), call=call)
