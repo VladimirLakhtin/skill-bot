@@ -9,7 +9,7 @@ import random
 
 # Search records
 @dp.callback_query_handler(IsTeacher(), lambda callback: callback.data.startswith('edit'))
-async def search_student(call, state :FSMContext):
+async def search_student(call, state: FSMContext):
     ikb = keyboard.create_ikb_records_list()
     text = f"Введите имя или фамилию студента которого хотите найти"
     await main_edit_mes(text=text, ikb=ikb, call=call)
@@ -22,7 +22,7 @@ async def search_student(call, state :FSMContext):
 
 # Show of search results
 @dp.message_handler(IsTeacher(), state=FSMSeachRecord.search_name_state)
-async def search_info_list_student(message, state :FSMContext):
+async def search_info_list_student(message, state: FSMContext):
     async with state.proxy() as data:
         message_id = data["message_search_id"]
         chat_id = data["chat_search_id"]
@@ -42,9 +42,10 @@ async def search_info_list_student(message, state :FSMContext):
 
 # List of all records to edit
 @dp.callback_query_handler(IsTeacher(), text='all', state="*")
-async def edit_all_records_list(call, state :FSMContext):
+async def edit_all_records_list(call, state: FSMContext):
     teacher_id = main_get(tables=['teachers'], columns=['id'], condition=f'tg_id = {call.from_user.id}', is_one=True)
-    record_id, records_names = main_get(tables=['students'], columns=['id', 'name'], condition=f'teacher_id = {teacher_id}')
+    record_id, records_names = main_get(tables=['students'], columns=['id', 'name'],
+                                        condition=f'teacher_id = {teacher_id}')
     ikb = keyboard.create_ikb_records_list(record_id, records_names, is_all=True)
     text = f"Все твои студенты SkillBox"
     await main_edit_mes(text=text, ikb=ikb, call=call)
@@ -63,9 +64,9 @@ async def edit_record_info(call, state: FSMContext):
         data["id"] = rec_id
 
 
-# Request new value of the feature
+# Request a new feature value
 @dp.callback_query_handler(IsTeacher(), lambda callback: callback.data.startswith("feat_"))
-async def edit_record_feat(call, state :FSMContext):
+async def edit_record_feat(call, state: FSMContext):
     _, rec_id, feat_name, feat_name_rus = call.data.split("_")
     ikb = keyboard.create_ikb_back_rec_info(rec_id)
     text = f"Введите изменение значении {feat_name_rus}"
@@ -77,8 +78,9 @@ async def edit_record_feat(call, state :FSMContext):
     await FSMEditFeat.edit_records_state.set()
 
 
+# Request confirm with changes
 @dp.message_handler(IsTeacher(), lambda message: message.text, state=FSMEditFeat.edit_records_state)
-async def edit_record(message, state :FSMContext):
+async def edit_record(message, state: FSMContext):
     async with state.proxy() as data:
         rec_id, feat_name, feat_name_rus = data["params"]
         message_id = data["edit_call_message_id"]
@@ -99,8 +101,10 @@ async def edit_record(message, state :FSMContext):
         await main_edit_mes(text=text, ikb=keyboard.accept_and_reject_edit(), message_id=message_id, chat_id=chat_id)
 
 
-@dp.callback_query_handler(IsTeacher(), lambda callback: callback.data in ["accept_edit", "reject_edit"], state=FSMEditFeat.edit_records_state)
-async def reject_or_accept_edit(call, state :FSMContext):
+# Accept or reject changes
+@dp.callback_query_handler(IsTeacher(), lambda callback: callback.data in ["accept_edit", "reject_edit"],
+                           state=FSMEditFeat.edit_records_state)
+async def reject_or_accept_edit(call, state: FSMContext):
     async with state.proxy() as data:
         rec_id, feat_name, feat_name_rus = data["params"]
         answer = data["answer"]

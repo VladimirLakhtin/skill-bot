@@ -1,14 +1,14 @@
-import keyboards.admin_keyboards as keyboard
-
+import keyboards.admin as keyboard
 from state import FSMContext, FSMSeachStudent
 from func_bot import *
 from filters import IsAdmin
 from text import text_admin
 import random
 
+
 # Search students
 @dp.callback_query_handler(IsAdmin(), text='coins_add')
-async def search_student_handler(call, state:FSMContext):
+async def search_student_handler(call, state: FSMContext):
     ikb = keyboard.students_list()
     text = f"Введите имя или фамилию студента которого хотите найти:"
     await main_edit_mes(text=text, ikb=ikb, call=call)

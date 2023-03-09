@@ -8,7 +8,7 @@ import random
 
 # Search students
 @dp.callback_query_handler(IsTeacher(), text='coins_add')
-async def search_student_handler(call, state:FSMContext):
+async def search_student_handler(call, state: FSMContext):
     ikb = keyboard.students_list()
     text = f"Введите имя или фамилию студента которого хотите найти:"
     await main_edit_mes(text=text, ikb=ikb, call=call)
@@ -42,7 +42,8 @@ async def search_result_student(message, state: FSMContext):
 @dp.callback_query_handler(IsTeacher(), text='allstd4tch', state=FSMSeachStudent.search_name_state)
 async def all_student(call, state: FSMContext):
     teacher_id = main_get(tables=['teachers'], columns=['id'], condition=f'tg_id = {call.from_user.id}', is_one=True)
-    record_id, records_names = main_get(tables=['students'], columns=['id', 'name'], condition=f'teacher_id = {teacher_id}')
+    record_id, records_names = main_get(tables=['students'], columns=['id', 'name'],
+                                        condition=f'teacher_id = {teacher_id}')
     ikb = keyboard.students_list(record_id, records_names, is_all=True)
     text = f"Все студенты SkillBox"
     await main_edit_mes(text=text, ikb=ikb, call=call)

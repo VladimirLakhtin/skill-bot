@@ -1,22 +1,23 @@
-from aiogram.types import InlineKeyboardMarkup,  InlineKeyboardButton
-
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Main menu
 kb_main = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton("Добавить студента ➕", callback_data="add_std"), InlineKeyboardButton("Редактировать студентов 🖋", callback_data="edit_std")],
-    [InlineKeyboardButton("Добавить SkillCoins 💎", callback_data="coins_add"), InlineKeyboardButton("Топ студентов", callback_data="top_std")]
+    [InlineKeyboardButton("Добавить студента ➕", callback_data="add_std"),
+     InlineKeyboardButton("Редактировать студентов 🖋", callback_data="edit_std")],
+    [InlineKeyboardButton("Добавить SkillCoins 💎", callback_data="coins_add"),
+     InlineKeyboardButton("Топ студентов", callback_data="top_std")]
 ])
 
-
 # Back main menu
-back_main_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton("Назад в меню", callback_data="back_main_menu")]])
-
+back_main_menu = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton("Назад в меню", callback_data="back_main_menu")]])
 
 # Add Students
 
 # Request accept or reject add new student
 accept_or_reject = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton("✅ Принять ✅", callback_data="accept"), InlineKeyboardButton("❌ Отмена ❌", callback_data="reject")]
+    [InlineKeyboardButton("✅ Принять ✅", callback_data="accept"),
+     InlineKeyboardButton("❌ Отмена ❌", callback_data="reject")]
 ])
 
 
@@ -25,8 +26,10 @@ accept_or_reject = InlineKeyboardMarkup(inline_keyboard=[
 # Edit menu
 def back_edit_menu(students):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("Показать всех 🔍", callback_data="all"), InlineKeyboardButton("🔙 Назад в меню", callback_data='back_main_menu')]
+        [InlineKeyboardButton("Показать всех 🔍", callback_data="all"),
+         InlineKeyboardButton("🔙 Назад в меню", callback_data='back_main_menu')]
     ])
+
 
 # Show result of search or all students
 def create_ikb_records_list(rec_id=[], rec_names=[], is_all=False) -> InlineKeyboardMarkup:
@@ -36,16 +39,19 @@ def create_ikb_records_list(rec_id=[], rec_names=[], is_all=False) -> InlineKeyb
     if is_all:
         ikb.add(InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
     else:
-        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data="all"), InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
+        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data="all"),
+                InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
     return ikb
 
 
 # Show student info
 def create_ikb_info_list(rec_id: int, columns: dict) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton('Имя', callback_data=f"feat_{rec_id}_name_Имя"), InlineKeyboardButton('User name', callback_data=f"feat_{rec_id}_tg-username_User-name")],
+        [InlineKeyboardButton('Имя', callback_data=f"feat_{rec_id}_name_Имя"),
+         InlineKeyboardButton('User name', callback_data=f"feat_{rec_id}_tg-username_User-name")],
         [InlineKeyboardButton('SkillCoins', callback_data=f"feat_{rec_id}_score_SkillCoins")],
-        [InlineKeyboardButton("Удалить 🗑", callback_data="del"), InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu")]
+        [InlineKeyboardButton("Удалить 🗑", callback_data="del"),
+         InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu")]
     ])
     return ikb
 
@@ -53,20 +59,21 @@ def create_ikb_info_list(rec_id: int, columns: dict) -> InlineKeyboardMarkup:
 # Back to student info
 def create_ikb_back_rec_info(rec_id):
     ikb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("🔙 Назад", callback_data= f"std_{rec_id}")]])
+        [InlineKeyboardButton("🔙 Назад", callback_data=f"std_{rec_id}")]])
     return ikb
 
 
 # Request accept or reject edit student feat
 def accept_and_reject_edit():
     return InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton("✅ Принять ✅", callback_data="accept_edit"), InlineKeyboardButton("❌ Отмена ❌", callback_data="reject_edit")]
-])
+        [InlineKeyboardButton("✅ Принять ✅", callback_data="accept_edit"),
+         InlineKeyboardButton("❌ Отмена ❌", callback_data="reject_edit")]
+    ])
 
 
 # Add SkillCoins
 
-# Show student 
+# Show all teacher's students
 def students_list(rec_id=None, rec_names=None, is_all=False) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     if rec_id and rec_names:
@@ -75,10 +82,12 @@ def students_list(rec_id=None, rec_names=None, is_all=False) -> InlineKeyboardMa
     if is_all:
         ikb.add(InlineKeyboardButton("🔙 Назад", callback_data='back_main_menu'))
     else:
-        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data='allstd4tch'), InlineKeyboardButton("🔙 Назад в меню", callback_data='back_main_menu'))
+        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data='allstd4tch'),
+                InlineKeyboardButton("🔙 Назад в меню", callback_data='back_main_menu'))
     return ikb
 
 
+# Show tasks list to add SkillCoins
 def tasks_list(rec_id=None, rec_title=None, rec_cost=None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     if rec_id and rec_title and rec_cost:
@@ -88,7 +97,9 @@ def tasks_list(rec_id=None, rec_title=None, rec_cost=None) -> InlineKeyboardMark
     return ikb
 
 
+# Confirm
 def accept_add_coins():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("✅ Добавить ✅", callback_data="coins_add_accept"), InlineKeyboardButton("❌ Отмена ❌", callback_data="back_main_menu")],
+        [InlineKeyboardButton("✅ Добавить ✅", callback_data="coins_add_accept"),
+         InlineKeyboardButton("❌ Отмена ❌", callback_data="back_main_menu")],
     ])

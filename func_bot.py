@@ -157,10 +157,16 @@ def add_skillcoins(std_id, coins):
     update_record(table='students', rec_id=std_id, columns={'score':new_score})
 
 
+def get_top_std():
+    request = "SELECT name, score FROM students ORDER BY score DESC LIMIT 10"
+    cursor.execute(request)
+    records = cursor.fetchall()
+    return records
+
+
 async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
-    if message_id == None and call != None:
+    if chat_id == None and message_id == None and call != None:
         message_id = call.message.message_id
-    if chat_id == None and call != None:
         chat_id = call.message.chat.id
     await bot.edit_message_text(
         text=text,
@@ -169,12 +175,5 @@ async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
         reply_markup=ikb)
 
 
-def get_top_std():
-    request = "SELECT name, score FROM students ORDER BY score DESC LIMIT 10"
-    cursor.execute(request)
-    records = cursor.fetchall()
-    return records
-
-
 if __name__ == "__main__":
-    print(get_top_std())
+    print(main_get(['students', 'teachers'], ['students.name'], condition='students.id = 18'))

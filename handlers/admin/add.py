@@ -1,14 +1,16 @@
+import random
+
 import data_checking
-import keyboards.admin_keyboards as keyboard
+import keyboards.admin as keyboard
 from state import FSMAddRecord, FSMContext
 from func_bot import *
 from filters import IsAdmin
 from text import text_admin
-import random
+
 
 # Add menu
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data in ["add", "back_menu"], state="*")
-async def add_menu(call, state:FSMContext):
+async def add_menu(call, state: FSMContext):
     text = random.choice(text_admin.text["add"])
     await main_edit_mes(text=text, ikb=keyboard.add_menu, call=call)
     if call.data != "add":
@@ -17,7 +19,7 @@ async def add_menu(call, state:FSMContext):
 
 # Request name of record
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data.startswith('add_'))
-async def request_name(call, state:FSMContext):
+async def request_name(call, state: FSMContext):
     table = call.data.split('_')[-1]
     if table == "students":
         rus_name, next_state = ['имя студента', FSMAddRecord.state_name]
@@ -37,8 +39,9 @@ async def request_name(call, state:FSMContext):
     await next_state.set()
 
 
+# Request SkillCoins count for a task or award
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_title)
-async def input_title(message, state:FSMContext):
+async def input_title(message, state: FSMContext):
     async with state.proxy() as data:
         table = data["table"]
         chat_id = data["chat_id_" + table]
@@ -50,8 +53,9 @@ async def input_title(message, state:FSMContext):
     await FSMAddRecord.state_cost.set()
 
 
+# Check input cost and show all info about new task or award
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_cost)
-async def input_cost(message, state:FSMContext):
+async def input_cost(message, state: FSMContext):
     async with state.proxy() as data:
         table = data["table"]
         chat_id = data["chat_id_" + table]
@@ -67,16 +71,16 @@ async def input_cost(message, state:FSMContext):
             next_state = FSMAddRecord.accept_or_reject
             await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
         elif data['count'] == 1:
-            text = f"Введите именно число"
+            text = f"Введите положительное число"
             ikb = keyboard.back_add_menu
             await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
         await next_state.set()
 
 
-# Request direction of record
+# Request direction of student or teacher
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_name)
-async def request_prof(message, state:FSMContext):
+async def request_prof(message, state: FSMContext):
     async with state.proxy() as data:
         table = data["table"]
         chat_id = data["chat_id_" + table]
@@ -103,10 +107,11 @@ async def request_prof(message, state:FSMContext):
         if status[1] == "ok":
             if table == 'students':
                 ikb = keyboard.create_ikb_records_list(directions_id, directions_names, type_class='prof', option="add")
-                text=f"Хорошо, теперь выбери {mini_text}"
+                text = f"Хорошо, теперь выбери {mini_text}"
                 await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
             elif table == 'teachers':
-                await bot.edit_message_text(text=f"Введите названия направления куратора", message_id=message_id, chat_id=chat_id, reply_markup=keyboard.back_add_menu)
+                await bot.edit_message_text(text=f"Введите названия направления куратора", message_id=message_id,
+                                            chat_id=chat_id, reply_markup=keyboard.back_add_menu)
                 async with state.proxy() as data:
                     data["call_message_id_teachers"] = message_id
                     data["call_chat_id_teachers"] = chat_id
@@ -120,8 +125,9 @@ async def request_prof(message, state:FSMContext):
 
 
 # Input proccesing (fignya)
-@dp.callback_query_handler(IsAdmin(), lambda callback: callback.data in ["yes", "no"], state=FSMAddRecord.state_yes_and_no)
-async def input_processing(call, state:FSMContext):
+@dp.callback_query_handler(IsAdmin(), lambda callback: callback.data in ["yes", "no"],
+                           state=FSMAddRecord.state_yes_and_no)
+async def input_processing(call, state: FSMContext):
     async with state.proxy() as data:
         table = data["table"]
         directions_id, directions_names = main_get(tables=['teachers'], columns=['id', 'direction'])
@@ -147,7 +153,7 @@ async def input_processing(call, state:FSMContext):
 
 # Request tg-id for new teacher
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_prof)
-async def request_tg_id_tch(message, state:FSMContext):
+async def request_tg_id_tch(message, state: FSMContext):
     async with state.proxy() as data:
         message_id = data["call_message_id_teachers"]
         chat_id = data["call_chat_id_teachers"]
@@ -160,7 +166,7 @@ async def request_tg_id_tch(message, state:FSMContext):
 
 # Request tg-id for new student
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data.startswith('prof'), state=FSMAddRecord.state_prof)
-async def request_tg_id_std(call, state:FSMContext):
+async def request_tg_id_std(call, state: FSMContext):
     text = f"Теперь введи ТГ name студента"
     await main_edit_mes(text=text, ikb=keyboard.back_add_menu, call=call)
     async with state.proxy() as data:
@@ -172,14 +178,15 @@ async def request_tg_id_std(call, state:FSMContext):
 
 # Show list with new record info
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_tg_name)
-async def list_adding_info(message, state:FSMContext):
+async def list_adding_info(message, state: FSMContext):
     async with state.proxy() as data:
         table = data["table"]
     rus_name = 'Студента' if table == 'students' else 'Куратора'
     async with state.proxy() as data:
         name = data["name_" + table]
         if table == 'students':
-            teacher_name, direction = main_get(tables=['teachers'], columns=["name", 'direction'], condition=f"id = {data['prof']}", is_one=True)
+            teacher_name, direction = main_get(tables=['teachers'], columns=["name", 'direction'],
+                                               condition=f"id = {data['prof']}", is_one=True)
             text = f"Информация о введённых данных\n\n{rus_name} - {name}\nГруппа - {direction}\nКуратор - {teacher_name}\nТГ ник - {message.text}"
         else:
             direction = data["prof"]
@@ -193,9 +200,10 @@ async def list_adding_info(message, state:FSMContext):
     await FSMAddRecord.accept_or_reject.set()
 
 
-# Accept or reject adding / Back to add menu
-@dp.callback_query_handler(IsAdmin(), lambda callback: callback.data in ["accept", "reject"], state=FSMAddRecord.accept_or_reject)
-async def add_or_back_menu(call, state:FSMContext):
+# Accept or reject add
+@dp.callback_query_handler(IsAdmin(), lambda callback: callback.data in ["accept", "reject"],
+                           state=FSMAddRecord.accept_or_reject)
+async def add_or_back_menu(call, state: FSMContext):
     async with state.proxy() as data:
         table = data["table"]
         name = data["name_" + table]

@@ -1,11 +1,15 @@
-import keyboards.student_keyboards as keyboard
+import keyboards.student as keyboard
 from func_bot import *
 from filters import IsStudent
 import text.text_student
+
+
 # Main menu
 @dp.message_handler(IsStudent(), commands=['start'])
 async def start_handler(message):
-    await bot.send_message(message.from_user.id, f"Добро пожаловать в главное меню, {message.from_user.first_name}\n{text.text_student.text['start']}", reply_markup=keyboard.get_main_menu())
+    await bot.send_message(message.from_user.id,
+                           f"Добро пожаловать в главное меню, {message.from_user.first_name}\n{text.text_student.text['start']}",
+                           reply_markup=keyboard.get_main_menu())
 
 
 # Back to main menu
