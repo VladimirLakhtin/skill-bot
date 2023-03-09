@@ -17,8 +17,8 @@ translate = {
     'reward': 'Награда',
 }
 
-#Список данных из бд
-def main_get(tables: list(), columns=[], condition='', is_one=False) -> list():
+# Main function to get data
+def main_get(tables: list, columns=[], condition='', is_one=False) -> list():
 
     # WHERE param
     if condition:
@@ -157,8 +157,9 @@ def add_skillcoins(std_id, coins):
     update_record(table='students', rec_id=std_id, columns={'score':new_score})
 
 
-def get_top_std():
-    request = "SELECT name, score FROM students ORDER BY score DESC LIMIT 10"
+def get_top_std(teacher_id=None):
+    condition = f' WHERE teacher_id = {teacher_id}' if teacher_id else ''
+    request = f"SELECT students.name, score FROM students INNER JOIN teachers ON teacher_id == teachers.id{condition} ORDER BY score DESC LIMIT 10"
     cursor.execute(request)
     records = cursor.fetchall()
     return records
@@ -176,4 +177,4 @@ async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
 
 
 if __name__ == "__main__":
-    print(main_get(['students', 'teachers'], ['students.name'], condition='students.id = 18'))
+    print(get_top_std(1))

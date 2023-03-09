@@ -1,7 +1,7 @@
 import func_bot
 from func_bot import *
 from create_bot import dp
-import keyboards.admin_keyboards as keyboard
+import keyboards.admin as keyboard
 from filters import IsTeacher
 
 
