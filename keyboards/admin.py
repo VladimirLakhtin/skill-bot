@@ -1,3 +1,4 @@
+from typing import List
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Main menu
@@ -45,7 +46,7 @@ edit_menu = InlineKeyboardMarkup(inline_keyboard=[
 
 
 # Search edit menu
-def create_ikb_back_edit_menu(type_class: str):
+def create_ikb_back_edit_menu(type_class: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("Показать всех 🔍", callback_data="all_" + type_class),
          InlineKeyboardButton("🔙 Назад в меню", callback_data='back_menu_edit')]
@@ -60,7 +61,8 @@ butt_back_and_del_search = InlineKeyboardMarkup(inline_keyboard=[
 
 
 # Records list
-def create_ikb_records_list(rec_id, records_names, type_class, option=None, std_id=None) -> InlineKeyboardMarkup:
+def create_ikb_records_list(rec_id: List[int], records_names: List[str], type_class: str, option: str = None,
+                            std_id: int = None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     for i, name in enumerate(records_names):
         ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=f"{type_class}_{rec_id[i]}"))
@@ -102,7 +104,7 @@ def create_ikb_info_list(rec_id: int, columns: dict, table: str) -> InlineKeyboa
 
 
 #
-def create_ikb_back_rec_info(rec_id, table):
+def create_ikb_back_rec_info(rec_id: int, table: str) -> InlineKeyboardMarkup:
     if table == "students":
         type_class = "std"
     elif table == "teachers":
@@ -125,7 +127,7 @@ accept_and_reject_edit = InlineKeyboardMarkup(inline_keyboard=[
 # Add SkillCoins
 
 # Students list
-def students_list(rec_id=None, rec_names=None, is_all=False) -> InlineKeyboardMarkup:
+def students_list(rec_id: List[int] = None, rec_names: List[str] = None, is_all: bool = False) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     if rec_id and rec_names:
         for i, name in zip(rec_id, rec_names):
@@ -139,7 +141,8 @@ def students_list(rec_id=None, rec_names=None, is_all=False) -> InlineKeyboardMa
 
 
 # List of awards or tasks
-def tasks_list(rec_id=None, rec_title=None, rec_cost=None) -> InlineKeyboardMarkup:
+def tasks_list(rec_id: List[int] = None, rec_title: List[str] = None,
+               rec_cost: List[int] = None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     if rec_id and rec_title and rec_cost:
         for i, title, cost in zip(rec_id, rec_title, rec_cost):
@@ -149,7 +152,7 @@ def tasks_list(rec_id=None, rec_title=None, rec_cost=None) -> InlineKeyboardMark
 
 
 # Accept or reject add SkillCoins
-def accept_add_coins():
+def accept_add_coins() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("✅ Добавить ✅", callback_data="coins_add_accept"),
          InlineKeyboardButton("❌ Отмена ❌", callback_data="back_main_menu")],

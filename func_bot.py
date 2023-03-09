@@ -1,8 +1,12 @@
+from typing import List, Dict, Any, Tuple
+
 import sqlite3
 import difflib
-from create_bot import bot, dp
+from aiogram.types import InlineKeyboardMarkup
 
-#Конект с БД
+from create_bot import bot
+
+# Connect db
 connection = sqlite3.connect("db.db")
 cursor = connection.cursor()
 
@@ -17,9 +21,9 @@ translate = {
     'reward': 'Награда',
 }
 
-# Main function to get data
-def main_get(tables: list, columns=[], condition='', is_one=False) -> list():
 
+# Main function to get data
+def main_get(tables: List, columns: List = [], condition: str = '', is_one: bool = False) -> List[Any]:
     # WHERE param
     if condition:
         condition = 'WHERE ' + condition + ' '
@@ -45,7 +49,7 @@ def main_get(tables: list, columns=[], condition='', is_one=False) -> list():
     request = f"""SELECT {columns_text} FROM {tables} {condition}"""
     cursor.execute(request)
     records = cursor.fetchone() if is_one else cursor.fetchall()
-    
+
     # return
 
     if not records:
@@ -66,11 +70,14 @@ def main_get(tables: list, columns=[], condition='', is_one=False) -> list():
             return [rec[0] for rec in records]
 
 
-#Берём информацию по студенту или куратору по id кнопке
-def get_info_list(record_id: str, table: str):
+# Get full info about a record
+def get_info_list(record_id: str, table: str) -> (str, Dict[str, str]):
     tables = [table]
+    text_info = ''
+    columns = []
     if table == 'students':
-        columns = ['students.id', 'students.name', 'teachers.direction', 'students.tg_username', 'students.score', 'teachers.name']
+        columns = ['students.id', 'students.name', 'teachers.direction', 'students.tg_username', 'students.score',
+                   'teachers.name']
         tables = ['students', 'teachers']
     elif table == 'teachers':
         columns = ['id', 'name', 'direction', 'tg_username']
@@ -81,8 +88,8 @@ def get_info_list(record_id: str, table: str):
     elif table == "admins":
         columns = ['id', 'name', 'tg_id']
     list_info = main_get(
-        tables=tables, 
-        columns=columns, 
+        tables=tables,
+        columns=columns,
         condition=f"{table}.id == {record_id}",
         is_one=True
     )
@@ -100,21 +107,22 @@ def get_info_list(record_id: str, table: str):
     return text_info, columns
 
 
-#Удаляем человека из бд по id
+# Delete a record
 def remove_record(record_id: str, table: str) -> None:
     cursor.execute(f"""DELETE FROM {table} WHERE id = {record_id}""")
     connection.commit()
 
 
-def add_record(table: str, params: dict) -> None:
+# Add a new record
+def add_record(table: str, params: Dict) -> None:
     values = [str(p) if type(p) != str else p for p in params.values()]
     request = f"""INSERT INTO {table} ({', '.join(params.keys())}) VALUES ({', '.join(values)})"""
     cursor.execute(request)
     connection.commit()
 
 
-#Возвращаем список поиска студентов или кураторов при помощи вероятности совпадения букв в фамилии и в имени
-def get_search_results(table, name, teacher_id=None):
+# Search for similar names and surnames
+def get_search_results(table: str, name: str, teacher_id: int = None) -> (List[str], List[str]):
     result_id, result_names = [], []
     prob = 0.7
     condition = f'teacher_id = {teacher_id}' if teacher_id else None
@@ -127,7 +135,7 @@ def get_search_results(table, name, teacher_id=None):
         if len(name) == 1:
             matcher_surname = difflib.SequenceMatcher(None, name[0], surname_human).ratio()
             matcher_name = difflib.SequenceMatcher(None, name[0], name_human).ratio()
-            if (matcher_surname >= prob or matcher_name>= prob):
+            if (matcher_surname >= prob or matcher_name >= prob):
                 result_id.append(id_list[i])
                 result_names.append(cur_name[0] + ' ' + cur_name[1])
         else:
@@ -135,13 +143,15 @@ def get_search_results(table, name, teacher_id=None):
             matcher_name = difflib.SequenceMatcher(None, name[1], name_human).ratio()
             matcher_surname_back = difflib.SequenceMatcher(None, name[0], name_human).ratio()
             matcher_name_back = difflib.SequenceMatcher(None, name[1], surname_human).ratio()
-            if (matcher_surname >= prob or matcher_name>= prob) or (matcher_surname_back >= prob or matcher_name_back >= prob):
-                result_id.append(id_list[i])             
+            if (matcher_surname >= prob or matcher_name >= prob) or (
+                    matcher_surname_back >= prob or matcher_name_back >= prob):
+                result_id.append(id_list[i])
                 result_names.append(" ".join(cur_name))
     return result_id, result_names
 
 
-def update_record(table: str, rec_id, columns: dict) -> None:
+# Update a record value
+def update_record(table: str, rec_id, columns: Dict) -> None:
     col_val_text = ''
     for col, val in columns.items():
         col = col.replace('-', '_')
@@ -151,13 +161,15 @@ def update_record(table: str, rec_id, columns: dict) -> None:
     connection.commit()
 
 
+# Add SkillCoins to a student
 def add_skillcoins(std_id, coins):
     cur_score = main_get(tables=['students'], columns=['score'], condition=f'students.id = {std_id}', is_one=True)
     new_score = int(cur_score) + int(coins)
-    update_record(table='students', rec_id=std_id, columns={'score':new_score})
+    update_record(table='students', rec_id=std_id, columns={'score': new_score})
 
 
-def get_top_std(teacher_id=None):
+# Get top 10 students by SkillCoins
+def get_top_std(teacher_id: int = None) -> List[List[str]]:
     condition = f' WHERE teacher_id = {teacher_id}' if teacher_id else ''
     request = f"SELECT students.name, score FROM students INNER JOIN teachers ON teacher_id == teachers.id{condition} ORDER BY score DESC LIMIT 10"
     cursor.execute(request)
@@ -165,7 +177,8 @@ def get_top_std(teacher_id=None):
     return records
 
 
-async def main_edit_mes(text, ikb, call=None, message_id=None, chat_id=None):
+# Edit main message
+async def main_edit_mes(text: str, ikb: InlineKeyboardMarkup, call=None, message_id: int = None, chat_id: int = None) -> None:
     if chat_id == None and message_id == None and call != None:
         message_id = call.message.message_id
         chat_id = call.message.chat.id

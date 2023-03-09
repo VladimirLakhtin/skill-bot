@@ -1,8 +1,9 @@
+from typing import List
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 # Main menu
-def get_main_menu_developer():
+def get_main_menu_developer() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("➕ Добавить админа ➕", callback_data="admins_add"),
          InlineKeyboardButton("🖋 Редактировать админа 🖋", callback_data="admins_edit")],
@@ -22,7 +23,7 @@ confirm_add_admin = InlineKeyboardMarkup(inline_keyboard=[
 
 
 # Admins list
-def create_list_admins_ikb(records_name, rec_id):
+def create_list_admins_ikb(records_name: List[str], rec_id: List[int]) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     for i, name in enumerate(records_name):
         ikb.add(InlineKeyboardButton("💼 " + name + " 💼", callback_data=f"admins_{rec_id[i]}"))
@@ -38,7 +39,7 @@ edit_admin_ikb = InlineKeyboardMarkup(inline_keyboard=[
 
 
 # Back to full admin info
-def back_edit_admin_ikb(rec_id):
+def back_edit_admin_ikb(rec_id: int) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("🔙 Назад", callback_data=f"admins_{rec_id}")]])
     return ikb

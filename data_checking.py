@@ -1,4 +1,6 @@
-#Проверка данных имени на ввод
+from typing import List, Any
+
+
 def cheak_input_text(name, key):
         layout = dict(zip(map(ord, "qwertyuiop[]asdfghjkl;'zxcvbnm,./`"
                                    'QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?~'),
@@ -22,7 +24,8 @@ def cheak_input_text(name, key):
             text = f"В {key} не должены стоять символы: {list_exept_sym}"
             return text, "bad"
 
-def input_edit(inputs, column):
+
+def input_edit(inputs: Any, column: List) -> (bool, str):
     if column in ["reward", "cost", "score"]:
         flag = inputs.isdigit() and int(inputs) >= 0
         text = "Введите положительное число" if not flag else ""
