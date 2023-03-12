@@ -19,6 +19,7 @@ translate = {
     'title': 'Название',
     'cost': 'Цена',
     'reward': 'Награда',
+    'description': "Информация"
 }
 
 

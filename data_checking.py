@@ -1,4 +1,6 @@
 from typing import List, Any
+import datetime
+
 
 
 def cheak_input_text(name, key):
@@ -35,3 +37,21 @@ def input_edit(inputs: Any, column: List) -> (bool, str):
         text = "Введите имя и фамилию" if not flag else ""
         return flag, text
     return True, None
+
+def input_data(text_data):
+    flag = text_data.isdigit() and int(text_data) <= 30 and int(text_data) > 0
+    if flag:
+        now = datetime.datetime.now()
+        if int(text_data) < 10 and int(now.month) < 10:
+            return flag, f"{now.year}-0{now.month}-0{text_data}"
+        else:
+            return flag, f"{now.year}-{now.month}-{text_data}"
+    else:
+        if not(text_data.isdigit()):
+            text = "Введите именно число"
+        elif int(text_data) > 30:
+            text = "Такого дня в месяце нет"
+        else:
+            text = "Число должно быть положительным"
+        return flag, text
+

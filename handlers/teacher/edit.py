@@ -3,6 +3,7 @@ import keyboards.teacher as keyboard
 from state import FSMContext, FSMEditFeat, FSMSeachRecord
 from func_bot import *
 from filters import IsTeacher
+from create_bot import dp
 from text import text_admin
 import random
 

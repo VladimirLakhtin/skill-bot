@@ -1,11 +1,12 @@
 import random
-
+from create_bot import dp
 import data_checking
 import keyboards.admin as keyboard
 from state import FSMAddRecord, FSMContext
 from func_bot import *
 from filters import IsAdmin
 from text import text_admin
+
 
 
 # Add menu
@@ -39,6 +40,7 @@ async def request_name(call, state: FSMContext):
     await next_state.set()
 
 
+
 # Request SkillCoins count for a task or award
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_title)
 async def input_title(message, state: FSMContext):
@@ -48,9 +50,20 @@ async def input_title(message, state: FSMContext):
         message_id = data["message_id_" + table]
         data["name_" + table] = message.text
     await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
-    mini_text = "Введите кол-во Skillcoins для награды" if table == "awards" else "Введите кол-во Skillcoins за выполненое задание"
+    mini_text, next_state = ["Введите информацию к награде", FSMAddRecord.state_info_title] if table == "awards" else ["Введите кол-во Skillcoins за выполненое задание", FSMAddRecord.state_cost]
     await main_edit_mes(text=mini_text, ikb=keyboard.back_add_menu, message_id=message_id, chat_id=chat_id)
-    await FSMAddRecord.state_cost.set()
+    await next_state.set()
+
+@dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_info_title)
+async def input_title_info(message, state: FSMContext):
+    async with state.proxy() as data:
+        table = data["table"]
+        chat_id = data["chat_id_" + table]
+        message_id = data["message_id_" + table]
+        mini_text, data["description"] = ["Введите кол-во Skillcoins для награды", message.text]
+        await main_edit_mes(text=mini_text, ikb=keyboard.back_add_menu, message_id=message_id, chat_id=chat_id)
+        await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
+        await FSMAddRecord.state_cost.set()
 
 
 # Check input cost and show all info about new task or award
@@ -61,11 +74,16 @@ async def input_cost(message, state: FSMContext):
         chat_id = data["chat_id_" + table]
         message_id = data["message_id_" + table]
         name_title = data["name_" + table]
+        info = data["description"]
         data['count'] += 1
         rus_name_title = "награду" if table == "awards" else "выполненое задание"
         next_state = FSMAddRecord.state_cost
         if data_checking.input_edit(inputs=message.text, column='cost'):
-            text = f"Информация о введённых данных:\nНазвание {name_title}\nКол-во за {rus_name_title}: {message.text}"
+            if len(info) == 0:
+                info = ""
+            else:
+                info = f"Информация о награде: {info}"
+            text = f"Информация о введённых данных:\nНазвание {name_title}\nКол-во за {rus_name_title}: {message.text}\n{info}"
             ikb = keyboard.accept_and_reject
             data["cost_" + table] = message.text
             next_state = FSMAddRecord.accept_or_reject
@@ -190,7 +208,6 @@ async def list_adding_info(message, state: FSMContext):
             text = f"Информация о введённых данных\n\n{rus_name} - {name}\nГруппа - {direction}\nКуратор - {teacher_name}\nТГ ник - {message.text}"
         else:
             direction = data["prof"]
-            teacher_name = ""
             text = f"Информация о введённых данных\n\n{rus_name} - {name}\n Направление - {direction}\nТГ ник - {message.text}"
         data["tg_username_" + table] = message.text
         message_id_call = data["call_message_id_" + table]
@@ -207,7 +224,10 @@ async def add_or_back_menu(call, state: FSMContext):
     async with state.proxy() as data:
         table = data["table"]
         name = data["name_" + table]
-        tg_name = data["tg_username_" + table]
+        try:
+            tg_name = data["tg_username_" + table]
+        except Exception:
+            pass
     if call.data == "accept":
         if table == 'students':
             rus_name = 'Студент'
@@ -219,7 +239,7 @@ async def add_or_back_menu(call, state: FSMContext):
             params = {"name": f"'{name}'", "direction": f"'{direction}'", 'tg_username': f"'{tg_name}'"}
         elif table == "awards":
             rus_name = "Награда"
-            params = {"title": f"'{name}'", "cost": data["cost_" + table]}
+            params = {"title": f"'{name}'", "cost": data["cost_" + table], 'description': data["description"]}
             name = data["name_" + table] + data["cost_" + table]
         else:
             rus_name = "Задача"

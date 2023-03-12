@@ -1,9 +1,11 @@
+from create_bot import dp
 import keyboards.admin as keyboard
 from state import FSMContext, FSMSeachStudent
 from func_bot import *
 from filters import IsAdmin
 from text import text_admin
 import random
+from datetime import date
 
 
 # Search students
@@ -73,8 +75,11 @@ async def choose_task(call, state: FSMContext):
 @dp.callback_query_handler(IsAdmin(), text='coins_add_accept')
 async def choose_task(call, state: FSMContext):
     async with state.proxy() as data:
-        std_id, _ = data['std_info']
-        _, _, cost = data['task_info']
+        std_id, std_name = data['std_info']
+        _, tasks_name, cost = data['task_info']
+    name_admin = main_get(tables=['admins'], columns=['name'], condition=f'tg_id = {call.from_user.id}', is_one=True)
+    admin_text = f"Админ {name_admin} выдал студенту {std_name}\nКол-во SkillCoins - {cost}\nЗа {tasks_name}\n{date.today()}"
+    await bot.send_message(text=admin_text, chat_id="-1001881010069")
     await call.answer(f"{cost} SkillCoins зачислено")
     add_skillcoins(std_id=std_id, coins=cost)
     text = f"Главное меню\n{text_admin.text['start']}"

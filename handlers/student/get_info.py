@@ -1,6 +1,7 @@
 import keyboards.student as keyboard
 from func_bot import *
 from filters import IsStudent
+from create_bot import dp
 
 
 # Cheak SkillCoins account

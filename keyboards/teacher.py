@@ -1,6 +1,7 @@
 from typing import List
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+
 # Main menu
 kb_main = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Добавить студента ➕", callback_data="add_std"),
@@ -106,4 +107,10 @@ def accept_add_coins() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton("✅ Добавить ✅", callback_data="coins_add_accept"),
          InlineKeyboardButton("❌ Отмена ❌", callback_data="back_main_menu")],
+    ])
+
+def set_the_day():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton("Оставить текущий", callback_data="old"),
+         InlineKeyboardButton("Задать новый", callback_data="new")],
     ])

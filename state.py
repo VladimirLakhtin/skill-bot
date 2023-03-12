@@ -8,6 +8,7 @@ class FSMAddRecord(StatesGroup):
     state_tg_name = State()
 
     state_title = State()
+    state_info_title = State()
     state_cost = State()
 
     accept_or_reject = State()
@@ -30,3 +31,8 @@ class FSMDeveloper(StatesGroup):
     add_id_admin_state = State()
     accept_or_reject_admin_state = State()
     edit_admin_state = State()
+
+
+class FSMTeachers(StatesGroup):
+    add_day_state = State()
+    add_coins_state = State()

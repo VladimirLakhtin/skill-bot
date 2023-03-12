@@ -1,9 +1,13 @@
+import data_checking
 import keyboards.teacher as keyboard
-from state import FSMContext, FSMSeachStudent
+from state import FSMContext, FSMSeachStudent, FSMTeachers
 from func_bot import *
 from filters import IsTeacher
 from text import text_admin
-import random
+from create_bot import dp
+from datetime import date
+
+
 
 
 # Search students
@@ -64,20 +68,62 @@ async def choose_task(call, state: FSMContext):
 @dp.callback_query_handler(IsTeacher(), lambda call: call.data.startswith('choose_task'))
 async def choose_task(call, state: FSMContext):
     async with state.proxy() as data:
-        _, std_name = data['std_info']
         data['task_info'] = call.data.split('_')[2:]
-    ikb = keyboard.accept_add_coins()
-    text = f'Хотите добавить SkillCoins {std_name} за {call.data.split("_")[3]} - {call.data.split("_")[4]} SkillCoins'
+        data["choose"] = call.data
+    ikb = keyboard.set_the_day()
+    text = "Хотите ли вы добавить день начисления?"
     await main_edit_mes(text=text, ikb=ikb, call=call)
 
+@dp.callback_query_handler(IsTeacher(), lambda call: call.data in ["new", "old"])
+async def set_data(call, state:FSMContext):
+    async with state.proxy() as data:
+        _, std_name = data['std_info']
+        info = data["choose"]
+        data["mess_id"] = call.message.message_id
+        data["chat_id"] = call.message.chat.id
+        if call.data == "old":
+            text = f'Хотите добавить SkillCoins {std_name} за {info.split("_")[3]} - {info.split("_")[4]} SkillCoins за {date.today()}'
+            ikb = keyboard.accept_add_coins()
+            await main_edit_mes(text=text, ikb=ikb, call=call)
+            await FSMTeachers.add_coins_state.set()
+            data["date"] = date.today()
+        else:
+            await main_edit_mes(text="Введите день начисления", ikb=keyboard.back_main_menu, call=call)
+            await FSMTeachers.add_day_state.set()
 
-# Add SkillCoins
-@dp.callback_query_handler(IsTeacher(), text='coins_add_accept')
+@dp.message_handler(IsTeacher(), lambda message: message.text, state=FSMTeachers.add_day_state)
+async def days(message, state:FSMContext):
+    async with state.proxy() as data:
+        _, std_name = data['std_info']
+        info = data["choose"]
+        message_id = data["mess_id"]
+        chat_id = data["chat_id"]
+        flag, text = data_checking.input_data(message.text)
+        await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
+        if not flag:
+            try:
+                await main_edit_mes(text=text, message_id=message_id, chat_id=chat_id, ikb=keyboard.back_main_menu)
+                await bot.delete_message()
+            except:
+                pass
+            await FSMTeachers.add_day_state.set()
+        else:
+            await main_edit_mes(f'Хотите добавить SkillCoins {std_name} за {info.split("_")[3]} - {info.split("_")[4]} SkillCoins за {text}', message_id=message_id, chat_id=chat_id, ikb=keyboard.accept_add_coins())
+            data["date"] = text
+            await FSMTeachers.next()
+
+    # Add SkillCoins
+@dp.callback_query_handler(IsTeacher(), text='coins_add_accept', state=FSMTeachers.add_coins_state)
 async def choose_task(call, state: FSMContext):
     async with state.proxy() as data:
-        std_id, _ = data['std_info']
-        _, _, cost = data['task_info']
+        std_id, std_name = data['std_info']
+        _, tasks_name, cost = data['task_info']
+        dates = data["date"]
     await call.answer(f"{cost} SkillCoins зачислено")
+    name_teacher = main_get(tables=['teachers'], columns=['name'], condition=f'tg_id = {call.from_user.id}', is_one=True)
+    text_teacher = f"Куоатор {name_teacher} выдал студенту {std_name}\nКол-во SkillCoins - {cost}\nЗа {tasks_name}\n{dates}"
+    await bot.send_message(text=text_teacher, chat_id="-1001881010069")
     add_skillcoins(std_id=std_id, coins=cost)
     text = f"Главное меню\n{text_admin.text['start']}"
     await main_edit_mes(text=text, ikb=keyboard.kb_main, call=call)
+    await state.finish()

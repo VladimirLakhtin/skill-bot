@@ -4,6 +4,8 @@ from state import FSMAddRecord, FSMContext
 from func_bot import *
 from filters import IsTeacher
 from text import text_admin
+from create_bot import dp
+from datetime import date
 import random
 
 
@@ -69,6 +71,9 @@ async def add_or_back_menu(call, state: FSMContext):
         params = {"name": f"'{name}'", "score": 0, "teacher_id": f"'{teacher_id}'", 'tg_username': f"'{tg_name}'"}
         add_record(table='students', params=params)
         await call.answer(f"Студент {name} успешно добавлен")
+        name_teacher, direction = main_get(tables=['teachers'], columns=['name', 'direction'], condition=f'tg_id = {call.from_user.id}', is_one=True)
+        text_teacher = f"Куратор {name_teacher} добавил студента {name}\nTG-{tg_name}\n Профессия - {direction}\n{date.today()}"
+        await bot.send_message(text=text_teacher, chat_id="-1001881010069")
     text = 'Добро пожаловать в главное меню'
     await main_edit_mes(text=text, ikb=keyboard.kb_main, call=call)
     await state.finish()
