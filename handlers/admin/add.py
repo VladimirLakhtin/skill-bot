@@ -51,7 +51,7 @@ async def input_title(message, state: FSMContext):
         message_id = data["message_id_" + table]
         data["name_" + table] = message.text
     await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
-    if table == "awards":
+    if table != "awards":
         mini_text = "Введите <b>описание</b> условий выполнения задания"
     else:
         mini_text = "Введите <b>описание</b> награды"

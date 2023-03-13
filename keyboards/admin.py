@@ -44,7 +44,6 @@ edit_menu = InlineKeyboardMarkup(inline_keyboard=[
     [back_main_menu_btn]
 ])
 
-
 # Search edit menu
 def create_ikb_back_edit_menu(type_class: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -62,11 +61,38 @@ butt_back_and_del_search = InlineKeyboardMarkup(inline_keyboard=[
 
 # Records list
 def create_ikb_records_list(rec_id: List[int], records_names: List[str], type_class: str, option: str = None,
-                            std_id: int = None) -> InlineKeyboardMarkup:
+                            std_id: int = None, step: int = None, cur_step: int = None, pref: str = None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
-    for i, name in enumerate(records_names):
-        ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=f"{type_class}_{rec_id[i]}"))
-    back_edit = InlineKeyboardButton("🔙 Назад в меню", callback_data="back_menu_edit")
+    if step:
+        try:
+            if cur_step > step:
+                step_rec_name = records_names[cur_step:step:-1]
+                rec_id = rec_id[cur_step:step:-1]
+            else:
+                step_rec_name = records_names[cur_step:step]
+                rec_id = rec_id[cur_step:step]
+        except IndexError:
+            if len(records_names) < step:
+                step_rec_name = records_names
+                rec_id = rec_id
+            else:
+                step_rec_name = records_names[step:]
+                rec_id = rec_id[step:]
+        for i, name in enumerate(step_rec_name):
+            ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=f"{type_class}_{rec_id[i]}"))
+        if cur_step == 0:
+            ikb.add(InlineKeyboardButton("➡", callback_data="next_inline"))
+        elif len(records_names) > step:
+            ikb.add(InlineKeyboardButton("⬅", callback_data="back_inline"), InlineKeyboardButton("➡", callback_data="next_inline"))
+        else:
+            ikb.add(InlineKeyboardButton("⬅", callback_data="back_inline"))
+    else:
+        for i, name in enumerate(records_names):
+            ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=f"{type_class}_{rec_id[i]}"))
+    if pref:
+        back_edit = InlineKeyboardButton("🔙 Назад в меню", callback_data=f"edit_{pref}")
+    else:
+        back_edit = InlineKeyboardButton("🔙 Назад в меню", callback_data="back_menu_edit")
     if type_class == "awards" or type_class == "tasks":
         ikb.add(back_edit)
     elif type_class != 'prof':
@@ -93,13 +119,24 @@ def create_ikb_info_list(rec_id: int, columns: dict, table: str) -> InlineKeyboa
         if count % 2 == 0:
             ikb.add(prev_btn, btn)
         prev_btn = btn
+    pref_1 = ""
+    pref_2 = ""
     if table != 'students':
         ikb.add(prev_btn)
     if table == "teachers":
-        ikb.row(InlineKeyboardButton("🔙 Назад в меню", callback_data="back_menu_edit"))
+        ikb.row(InlineKeyboardButton("🔙 Назад в меню", callback_data="edit_tch"))
     else:
+        if table == "awards":
+            pref_1 = "awards"
+            pref_2 = "edit"
+        elif table == "students":
+            pref_1 = "edit"
+            pref_2 = "std"
+        else:
+            pref_1 = "tasks"
+            pref_2 = "edit"
         ikb.row(InlineKeyboardButton("Удалить ➕🗑", callback_data="del"),
-                InlineKeyboardButton("🔙 Назад в меню", callback_data="back_menu_edit"))
+                InlineKeyboardButton("🔙 Назад в меню", callback_data=f"{pref_1}_{pref_2}"))
     return ikb
 
 
@@ -162,4 +199,8 @@ def accept_add_coins() -> InlineKeyboardMarkup:
 # Input control
 yes_and_no = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("✅", callback_data="yes"), InlineKeyboardButton("❌", callback_data="no")],
+])
+
+yes_and_no_del = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton("✅", callback_data="yes_del"), InlineKeyboardButton("❌", callback_data="no_del")],
 ])
