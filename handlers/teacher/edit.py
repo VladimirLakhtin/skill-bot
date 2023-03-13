@@ -51,7 +51,7 @@ async def search_info_list_student(message, state: FSMContext):
 async def edit_all_records_list(call, state: FSMContext):
     teacher_id = main_get(tables=['teachers'], columns=['id'], condition=f'tg_id = {call.from_user.id}', is_one=True)
     record_id, records_names = main_get(tables=['students'], columns=['id', 'name'],
-                                        condition=f'teacher_id = {teacher_id}')
+                                        condition=f'teacher_id = {teacher_id}', sort_by='name')
     ikb = keyboard.create_ikb_records_list(record_id, records_names, is_all=True)
     text = f"Все твои студенты SkillBox"
     await main_edit_mes(text=text, ikb=ikb, call=call)
