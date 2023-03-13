@@ -3,7 +3,7 @@ import keyboards.admin as keyboard
 from state import FSMContext, FSMSeachStudent
 from func_bot import *
 from filters import IsAdmin
-from text import text_admin
+from script_text.admin import text
 import random
 from datetime import date
 
@@ -82,5 +82,4 @@ async def choose_task(call, state: FSMContext):
     await bot.send_message(text=admin_text, chat_id="-1001881010069")
     await call.answer(f"{cost} SkillCoins зачислено")
     add_skillcoins(std_id=std_id, coins=cost)
-    text = f"Главное меню\n{text_admin.text['start']}"
-    await main_edit_mes(text=text, ikb=keyboard.kb_main, call=call)
+    await main_edit_mes(text=text['start'], ikb=keyboard.kb_main, call=call)

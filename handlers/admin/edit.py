@@ -1,3 +1,5 @@
+from aiogram.utils.exceptions import MessageNotModified
+
 import random
 from create_bot import dp
 from state import FSMContext, FSMEditFeat, FSMSeachRecord
@@ -5,14 +7,13 @@ import data_checking
 import keyboards.admin as keyboard
 from func_bot import *
 from filters import IsAdmin
-from text import text_admin
+from script_text.admin import text
 
 
 # Edit menu
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data == "edit")
 async def edit_menu(call):
-    text = random.choice(text_admin.text["edit"])
-    await main_edit_mes(text=text, ikb=keyboard.edit_menu, call=call)
+    await main_edit_mes(random.choice(text["edit"]), ikb=keyboard.edit_menu, call=call)
 
 
 # Back to edit menu / Delete record
@@ -24,18 +25,16 @@ async def back_edit_menu(call, state: FSMContext):
             record_id = data['id_' + table]
         rus_name = 'студента' if table == 'students' else 'куратора'
         remove_record(record_id=record_id, table=table)
-        await call.answer(f'Удалил, {rus_name}')
-    text = random.choice(text_admin.text["edit"])
-    await main_edit_mes(text=text, ikb=keyboard.edit_menu, call=call)
+        await call.answer(f'Запись {rus_name} удалена')
+    await main_edit_mes(text=random.choice(text['edit']), ikb=keyboard.edit_menu, call=call)
     await state.finish()
 
 
 # Get list of all tasks of awards to edit
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data in ["awards_edit", "tasks_edit"])
 async def get_title_list(call, state: FSMContext):
-    colum = "title"
-    table, text = ["awards", "Список всех наград"] if call.data == "awards_edit" else ["tasks", "Список всех задач"]
-    rec_id, records_name = main_get(tables=[table], columns=['id', colum])
+    table, text = ["awards", "Список всех наград 🥇"] if call.data == "awards_edit" else ["tasks", "Список всех задач 🧑🏻‍💻"]
+    rec_id, records_name = main_get(tables=[table], columns=['id', 'title'], sort_by='title')
     ikb = keyboard.create_ikb_records_list(rec_id, records_name, type_class=table)
     await main_edit_mes(text=text, ikb=ikb, call=call)
     async with state.proxy() as data:
@@ -48,14 +47,15 @@ async def get_title_list(call, state: FSMContext):
                            state="*")
 async def get_record_info_title(call, state: FSMContext):
     async with state.proxy() as data:
-        try:
+        if 'table' in data.keys():
             table = data["table"]
-        except KeyError:
+        else:
             _, _, table, _ = data["params"]
-        rec_id = call.data.split('_')[-1]
-        text, columns = get_info_list(rec_id, table=table)
-        ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns, table=table)
-        await main_edit_mes(text=text, ikb=ikb, call=call)
+            data["table"] = table
+    rec_id = call.data.split('_')[-1]
+    text, columns = get_info_list(rec_id, table=table)
+    ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns, table=table)
+    await main_edit_mes(text=text, ikb=ikb, call=call)
     await state.finish()
 
 
@@ -64,7 +64,7 @@ async def get_record_info_title(call, state: FSMContext):
 async def edit_all_records_list(call, state: FSMContext):
     table, rus_name, prefix = ['students', 'студенты', 'std'] if call.data == 'all_std' else ['teachers', 'учителя',
                                                                                               'tch']
-    record_id, records_names = main_get(tables=[table], columns=['id', 'name'])
+    record_id, records_names = main_get(tables=[table], columns=['id', 'name'], sort_by='name')
     ikb = keyboard.create_ikb_records_list(record_id, records_names, prefix, option="edit")
     text = f"Все {rus_name} SkillBox"
     await main_edit_mes(text=text, ikb=ikb, call=call)
@@ -92,7 +92,7 @@ async def edit_record_info(call, state: FSMContext):
 async def search_student_teacher_handler(call, state: FSMContext):
     table, rus_text = ['students', "студента"] if call.data == "edit_std" else ['teachers', "куратора"]
     ikb = keyboard.create_ikb_back_edit_menu(call.data.split('_')[-1])
-    text = f"Введите имя или фамилию {rus_text} которого хотите найти"
+    text = f"Введите имя или фамилию {rus_text} которого хотите найти 👀"
     await main_edit_mes(text=text, ikb=ikb, call=call)
     async with state.proxy() as data:
         data["table"] = table
@@ -117,10 +117,13 @@ async def search_info_list_student_teacher(message, state: FSMContext):
         ikb = keyboard.create_ikb_records_list(records_id, records_name, type_class, "search")
         await state.finish()
     else:
-        text = "Сходства не найдены, попробуй еще раз или выведи всех:"
+        text = "<b>Сходства не найдены</b>, попробуй еще раз или выведи всех: 🤷🏼‍♂️"
         ikb = keyboard.create_ikb_back_edit_menu(type_class)
         await FSMSeachRecord.search_name_state.set()
-    await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
+    try:
+        await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
+    except MessageNotModified:
+        pass
 
 
 # Request a new feature value
@@ -133,7 +136,7 @@ async def edit_record_feat(call, state: FSMContext):
                                                std_id=rec_id)
     else:
         ikb = keyboard.create_ikb_back_rec_info(rec_id, table)
-    text = f"Введите изменение значении {feat_name_rus}"
+    text = f"Введите изменение значения <b>{feat_name_rus}</b>"
     await main_edit_mes(text=text, ikb=ikb, call=call)
     async with state.proxy() as data:
         data["edit_call_message_id"] = call.message.message_id
@@ -153,7 +156,7 @@ async def edit_student_prof(call, state: FSMContext):
         cur_value = main_get(tables=["students", "teachers"], columns=['teachers.direction'],
                              condition=f"students.id = {rec_id_std}", is_one=True)
         data["answer"] = rec_id_prof
-    text = f"Вы точно хотите изменить {cur_value} на {new_value}"
+    text = f"Вы точно хотите изменить <b>{cur_value}</b> на <b>{new_value}</b>"
     await main_edit_mes(text=text, ikb=keyboard.accept_and_reject_edit, call=call)
 
 
@@ -171,13 +174,13 @@ async def edit_record(message, state: FSMContext):
         ikb = keyboard.create_ikb_back_rec_info(rec_id, table)
         try:
             await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
-        except:
+        except MessageNotModified:
             pass
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
     else:
         cur_value = main_get(tables=[table], columns=[feat_name], condition=f"id = {rec_id}", is_one=True)
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
-        text = f"Вы точно хотите изменить {cur_value} на {message.text}"
+        text = f"Вы точно хотите изменить <b>{cur_value}</b> на <b>{message.text}</b>"
         await main_edit_mes(text=text, ikb=keyboard.accept_and_reject_edit, message_id=message_id, chat_id=chat_id)
 
 
@@ -192,6 +195,7 @@ async def reject_or_accept_edit(call, state: FSMContext):
     feat_name = 'teacher_id' if feat_name == 'direction' and table == 'students' else feat_name
     if call.data == "accept_edit":
         update_record(table, rec_id, {feat_name: answer})
+        await call.answer("Изменил")
     text, columns = get_info_list(rec_id, table=table)
     ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns, table=table)
     await main_edit_mes(text=text, ikb=ikb, call=call)
@@ -199,4 +203,3 @@ async def reject_or_accept_edit(call, state: FSMContext):
     async with state.proxy() as data:
         data['table'] = table
         data['id_' + table] = rec_id
-    await call.answer("Изменил")

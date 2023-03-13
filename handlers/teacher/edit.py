@@ -1,10 +1,12 @@
+from aiogram.utils.exceptions import MessageNotModified
+
 import data_checking
 import keyboards.teacher as keyboard
 from state import FSMContext, FSMEditFeat, FSMSeachRecord
 from func_bot import *
 from filters import IsTeacher
 from create_bot import dp
-from text import text_admin
+from script_text.teacher import text
 import random
 
 
@@ -38,7 +40,10 @@ async def search_info_list_student(message, state: FSMContext):
         text = "Сходства не найдены, попробуй еще раз или выведи всех:"
         ikb = keyboard.create_ikb_records_list()
         await FSMSeachRecord.search_name_state.set()
-    await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
+    try:
+        await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
+    except MessageNotModified:
+        pass
 
 
 # List of all records to edit
@@ -58,7 +63,7 @@ async def edit_all_records_list(call, state: FSMContext):
 async def edit_record_info(call, state: FSMContext):
     rec_id = call.data.split('_')[-1]
     text, columns = get_info_list(rec_id, table='students')
-    ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns)
+    ikb = keyboard.create_ikb_info_list(rec_id=rec_id)
     await main_edit_mes(text=text, ikb=ikb, call=call)
     await state.finish()
     async with state.proxy() as data:
@@ -80,7 +85,7 @@ async def edit_record_feat(call, state: FSMContext):
 
 
 # Request confirm with changes
-@dp.message_handler(IsTeacher(), lambda message: message.text, state=FSMEditFeat.edit_records_state)
+@dp.message_handler(IsTeacher(), state=FSMEditFeat.edit_records_state)
 async def edit_record(message, state: FSMContext):
     async with state.proxy() as data:
         rec_id, feat_name, feat_name_rus = data["params"]
@@ -92,7 +97,7 @@ async def edit_record(message, state: FSMContext):
         ikb = keyboard.create_ikb_back_rec_info(rec_id)
         try:
             await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
-        except:
+        except MessageNotModified:
             pass
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
     else:
@@ -112,7 +117,7 @@ async def reject_or_accept_edit(call, state: FSMContext):
     if call.data == "accept_edit":
         update_record('students', rec_id, {feat_name: answer})
     text, columns = get_info_list(rec_id, table='students')
-    ikb = keyboard.create_ikb_info_list(rec_id=rec_id, columns=columns, table='students')
+    ikb = keyboard.create_ikb_info_list(rec_id=rec_id)
     await main_edit_mes(text=text, ikb=ikb, call=call)
     await state.finish()
     async with state.proxy() as data:

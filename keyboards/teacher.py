@@ -7,7 +7,7 @@ kb_main = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Добавить студента ➕", callback_data="add_std"),
      InlineKeyboardButton("Редактировать студентов 🖋", callback_data="edit_std")],
     [InlineKeyboardButton("Добавить SkillCoins 💎", callback_data="coins_add"),
-     InlineKeyboardButton("Топ студентов", callback_data="top_std")]
+     InlineKeyboardButton("Топ студентов 🔥", callback_data="top_std")]
 ])
 
 # Back main menu
@@ -37,9 +37,10 @@ def back_edit_menu() -> InlineKeyboardMarkup:
 def create_ikb_records_list(rec_id: List = None, rec_names: List = None, is_all=False,
                             is_edit=True) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
-    for i, name in zip(rec_id, rec_names):
-        cb_data = f'std_{i}' if is_edit else f'choose_std_{i}_{name}'
-        ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=cb_data))
+    if rec_id or rec_names:
+        for i, name in zip(rec_id, rec_names):
+            cb_data = f'std_{i}' if is_edit else f'choose_std_{i}_{name}'
+            ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=cb_data))
     if is_all:
         ikb.add(InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
     else:

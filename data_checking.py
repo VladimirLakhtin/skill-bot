@@ -27,16 +27,17 @@ def cheak_input_text(name, key):
             return text, "bad"
 
 
-def input_edit(inputs: Any, column: List) -> (bool, str):
+def input_edit(inputs: Any, column: str) -> (bool, str):
     if column in ["reward", "cost", "score"]:
         flag = inputs.isdigit() and int(inputs) >= 0
-        text = "Введите положительное число" if not flag else ""
+        text = "Число должно быть <b>положительным</b>" if not flag else ""
         return flag, text
     elif column == "name":
         flag = len(inputs.split()) == 2
-        text = "Введите имя и фамилию" if not flag else ""
+        text = "Необходимо ввести <b>имя и фамилию</b>" if not flag else ""
         return flag, text
     return True, None
+
 
 def input_data(text_data):
     flag = text_data.isdigit() and int(text_data) <= 30 and int(text_data) > 0
@@ -48,8 +49,8 @@ def input_data(text_data):
             return flag, f"{now.year}-{now.month}-{text_data}"
     else:
         if not(text_data.isdigit()):
-            text = "Введите именно число"
-        elif int(text_data) > 30:
+            text = "Введите <b>именно число</b>"
+        elif int(text_data) > 31:
             text = "Такого дня в месяце нет"
         else:
             text = "Число должно быть положительным"

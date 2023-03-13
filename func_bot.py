@@ -17,18 +17,14 @@ translate = {
     'direction': 'Профессия',
     'score': 'SkillCoins',
     'title': 'Название',
+    'description': 'Описание',
     'cost': 'Цена',
     'reward': 'Награда',
-    'description': "Информация"
 }
 
 
 # Main function to get data
-def main_get(tables: List, columns: List = [], condition: str = '', is_one: bool = False) -> List[Any]:
-    # WHERE param
-    if condition:
-        condition = 'WHERE ' + condition + ' '
-
+def main_get(tables: List, columns: List = [], condition: str = None, sort_by: str = None, is_one: bool = False) -> Any:
     # SELECT param
     if len(columns) > 1:
         columns_text = ', '.join(columns)
@@ -42,17 +38,22 @@ def main_get(tables: List, columns: List = [], condition: str = '', is_one: bool
 
     # FROM param
     if len(tables) == 2:
-        tables = tables[0] + ' INNER JOIN ' + tables[1] + ' ON teacher_id == teachers.id'
+        tables = tables[0] + ' INNER JOIN ' + tables[1] + ' ON teacher_id == teachers.id '
     else:
-        tables = tables[0]
+        tables = tables[0] + ' '
+
+    # WHERE param
+    condition = 'WHERE ' + condition + ' ' if condition else ''
+
+    # ORDER BY param:
+    sort_by = 'ORDER BY ' + sort_by if sort_by else ''
 
     # request
-    request = f"""SELECT {columns_text} FROM {tables} {condition}"""
+    request = f"""SELECT {columns_text} FROM {tables}{condition}{sort_by}"""
     cursor.execute(request)
     records = cursor.fetchone() if is_one else cursor.fetchall()
 
     # return
-
     if not records:
         return [[] for _ in columns]
 
@@ -83,9 +84,9 @@ def get_info_list(record_id: str, table: str) -> (str, Dict[str, str]):
     elif table == 'teachers':
         columns = ['id', 'name', 'direction', 'tg_username']
     elif table == 'awards':
-        columns = ['id', 'title', 'cost']
+        columns = ['id', 'title', 'cost', 'description']
     elif table == 'tasks':
-        columns = ['id', 'title', 'reward']
+        columns = ['id', 'title', 'reward', 'description']
     elif table == "admins":
         columns = ['id', 'name', 'tg_id']
     list_info = main_get(
@@ -95,13 +96,21 @@ def get_info_list(record_id: str, table: str) -> (str, Dict[str, str]):
         is_one=True
     )
     if table == 'students':
-        text_info = f"Имя - {list_info[1]}\nПрофессия - {list_info[2]}\nUser-name - {list_info[3]}\nSkillCoins - {list_info[4]}\nКуратор - {list_info[5]}"
+        text_info = f"Имя - {list_info[1]}\n" \
+                    f"Профессия - {list_info[2]}\n" \
+                    f"User-name - {list_info[3]}\n" \
+                    f"SkillCoins - {list_info[4]}\n" \
+                    f"Куратор - {list_info[5]}"
         columns = [col.split('.')[-1] for col in columns]
     elif table == 'teachers':
-        text_info = f"Имя - {list_info[1]}\nПрофессия - {list_info[2]}\nUser-name - {list_info[3]}"
+        text_info = f"Имя - {list_info[1]}\n" \
+                    f"Профессия - {list_info[2]}\n" \
+                    f"User-name - {list_info[3]}"
     elif table == 'awards' or table == 'tasks':
         title = "Цена" if table == "awards" else "Награда"
-        text_info = f"Название - {list_info[1]}\n{title}: {list_info[2]} SkillCoins"
+        text_info = f"Название - {list_info[1]}\n" \
+                    f"Описание - {list_info[3]}\n" \
+                    f"{title}: {list_info[2]} SkillCoins"
     elif table == "admins":
         text_info = f"Информация об админе\nИмя: {list_info[1]}\nTG-ID: {list_info[2]}"
     columns = {key.replace('_', '-'): val for (key, val) in translate.items() if key in columns}
@@ -118,6 +127,7 @@ def remove_record(record_id: str, table: str) -> None:
 def add_record(table: str, params: Dict) -> None:
     values = [str(p) if type(p) != str else p for p in params.values()]
     request = f"""INSERT INTO {table} ({', '.join(params.keys())}) VALUES ({', '.join(values)})"""
+    print(request)
     cursor.execute(request)
     connection.commit()
 
@@ -187,7 +197,8 @@ async def main_edit_mes(text: str, ikb: InlineKeyboardMarkup, call=None, message
         text=text,
         message_id=message_id,
         chat_id=chat_id,
-        reply_markup=ikb)
+        reply_markup=ikb,
+        parse_mode='html')
 
 
 if __name__ == "__main__":

@@ -1,19 +1,21 @@
+from aiogram.utils.exceptions import MessageNotModified
+
 import random
+
 from create_bot import dp
 import data_checking
 import keyboards.admin as keyboard
 from state import FSMAddRecord, FSMContext
 from func_bot import *
 from filters import IsAdmin
-from text import text_admin
-
+from script_text.admin import text
 
 
 # Add menu
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data in ["add", "back_menu"], state="*")
 async def add_menu(call, state: FSMContext):
-    text = random.choice(text_admin.text["add"])
-    await main_edit_mes(text=text, ikb=keyboard.add_menu, call=call)
+    cur_text = random.choice(text["add"])
+    await main_edit_mes(cur_text, ikb=keyboard.add_menu, call=call)
     if call.data != "add":
         await state.finish()
 
@@ -29,8 +31,8 @@ async def request_name(call, state: FSMContext):
     elif table == "awards":
         rus_name, next_state = ['название награды', FSMAddRecord.state_title]
     else:
-        rus_name, next_state = ['название задачи для студентов', FSMAddRecord.state_title]
-    text = f"Введите {rus_name}"
+        rus_name, next_state = ['название задачи', FSMAddRecord.state_title]
+    text = f"Введите <b>{rus_name}</b>"
     await main_edit_mes(text=text, ikb=keyboard.back_add_menu, call=call)
     async with state.proxy() as data:
         data["message_id_" + table] = call.message.message_id
@@ -40,8 +42,7 @@ async def request_name(call, state: FSMContext):
     await next_state.set()
 
 
-
-# Request SkillCoins count for a task or award
+# Request description of new award or task
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_title)
 async def input_title(message, state: FSMContext):
     async with state.proxy() as data:
@@ -50,17 +51,22 @@ async def input_title(message, state: FSMContext):
         message_id = data["message_id_" + table]
         data["name_" + table] = message.text
     await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
-    mini_text, next_state = ["Введите информацию к награде", FSMAddRecord.state_info_title] if table == "awards" else ["Введите кол-во Skillcoins за выполненое задание", FSMAddRecord.state_cost]
+    if table == "awards":
+        mini_text = "Введите <b>описание</b> условий выполнения задания"
+    else:
+        mini_text = "Введите <b>описание</b> награды"
     await main_edit_mes(text=mini_text, ikb=keyboard.back_add_menu, message_id=message_id, chat_id=chat_id)
-    await next_state.set()
+    await FSMAddRecord.state_info_title.set()
 
+
+# Request SkillCoins count for a task or award
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_info_title)
-async def input_title_info(message, state: FSMContext):
+async def input_description(message, state: FSMContext):
     async with state.proxy() as data:
         table = data["table"]
         chat_id = data["chat_id_" + table]
         message_id = data["message_id_" + table]
-        mini_text, data["description"] = ["Введите кол-во Skillcoins для награды", message.text]
+        mini_text, data["description"] = ["Введите <b>кол-во Skillcoins</b>", message.text]
         await main_edit_mes(text=mini_text, ikb=keyboard.back_add_menu, message_id=message_id, chat_id=chat_id)
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
         await FSMAddRecord.state_cost.set()
@@ -78,20 +84,19 @@ async def input_cost(message, state: FSMContext):
         data['count'] += 1
         rus_name_title = "награду" if table == "awards" else "выполненое задание"
         next_state = FSMAddRecord.state_cost
-        if data_checking.input_edit(inputs=message.text, column='cost'):
-            if len(info) == 0:
-                info = ""
-            else:
-                info = f"Информация о награде: {info}"
-            text = f"Информация о введённых данных:\nНазвание {name_title}\nКол-во за {rus_name_title}: {message.text}\n{info}"
+        flag, err_text = data_checking.input_edit(inputs=message.text, column='cost')
+        if flag:
+            text = f"Информация о введённых данных:" \
+                   f"\nНазвание {name_title}" \
+                   f"\nКол-во за {rus_name_title}: {message.text}" \
+                   f"\nОписание: {info}"
             ikb = keyboard.accept_and_reject
             data["cost_" + table] = message.text
             next_state = FSMAddRecord.accept_or_reject
             await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
         elif data['count'] == 1:
-            text = f"Введите положительное число"
             ikb = keyboard.back_add_menu
-            await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
+            await main_edit_mes(text=err_text, ikb=ikb, message_id=message_id, chat_id=chat_id)
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
         await next_state.set()
 
@@ -108,7 +113,7 @@ async def request_prof(message, state: FSMContext):
             status = data_checking.cheak_input_text(message.text, key="имени")
             data["name_" + table] = status[-1]
         elif table == "teachers":
-            mini_text = 'направления куратора'
+            mini_text = 'направление куратора'
             status = data_checking.cheak_input_text(message.text, key="имени")
             data["name_" + table] = status[-1]
         flag, text = data_checking.input_edit(message.text, column="name")
@@ -116,7 +121,7 @@ async def request_prof(message, state: FSMContext):
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
         try:
             await main_edit_mes(text=text, message_id=message_id, chat_id=chat_id, ikb=keyboard.back_add_menu)
-        except:
+        except MessageNotModified:
             pass
         await FSMAddRecord.state_name.set()
     else:
@@ -125,11 +130,11 @@ async def request_prof(message, state: FSMContext):
         if status[1] == "ok":
             if table == 'students':
                 ikb = keyboard.create_ikb_records_list(directions_id, directions_names, type_class='prof', option="add")
-                text = f"Хорошо, теперь выбери {mini_text}"
+                text = f"Хорошо, теперь выбери <b>{mini_text}</b>"
                 await main_edit_mes(text=text, ikb=ikb, message_id=message_id, chat_id=chat_id)
             elif table == 'teachers':
-                await bot.edit_message_text(text=f"Введите названия направления куратора", message_id=message_id,
-                                            chat_id=chat_id, reply_markup=keyboard.back_add_menu)
+                await main_edit_mes(f"Введите <b>название направления</b> куратора", ikb=keyboard.back_add_menu,
+                                    message_id=message_id, chat_id=chat_id)
                 async with state.proxy() as data:
                     data["call_message_id_teachers"] = message_id
                     data["call_chat_id_teachers"] = chat_id
@@ -153,23 +158,23 @@ async def input_processing(call, state: FSMContext):
     rus_name = 'студента' if table == 'students' else 'куратора'
     if call.data == "yes":
         if table == 'students':
-            text = f"Хорошо, теперь выбери профессию {rus_name}"
+            text = f"Хорошо, теперь выберите <b>профессию {rus_name}</b>"
             await main_edit_mes(text=text, ikb=ikb, call=call)
             await FSMAddRecord.next()
         else:
-            text = f"Введите названия направления куратора"
+            text = f"Введите название <b>направления куратора</b>"
             await main_edit_mes(text=text, ikb=keyboard.back_add_menu, call=call)
             async with state.proxy() as data:
                 data["call_message_id_teachers"] = call.message.message_id
                 data["call_chat_id_teachers"] = call.message.chat.id
             await FSMAddRecord.state_prof.set()
     else:
-        text = f"Введите имя {rus_name}"
+        text = f"Введите <b>имя {rus_name}</b>"
         await main_edit_mes(text=text, ikb=keyboard.back_add_menu, call=call)
         await FSMAddRecord.state_name.set()
 
 
-# Request tg-id for new teacher
+# Request tg-name for new teacher
 @dp.message_handler(IsAdmin(), lambda message: message.text, state=FSMAddRecord.state_prof)
 async def request_tg_id_tch(message, state: FSMContext):
     async with state.proxy() as data:
@@ -177,15 +182,15 @@ async def request_tg_id_tch(message, state: FSMContext):
         chat_id = data["call_chat_id_teachers"]
         data["prof"] = message.text
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-    text = f"Теперь введи ТГ name куратора"
+    text = f"Теперь введите <b>Telegram-ник</b> куратора"
     await main_edit_mes(text=text, ikb=keyboard.back_add_menu, message_id=message_id, chat_id=chat_id)
     await FSMAddRecord.state_tg_name.set()
 
 
-# Request tg-id for new student
+# Request tg-name for new student
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data.startswith('prof'), state=FSMAddRecord.state_prof)
 async def request_tg_id_std(call, state: FSMContext):
-    text = f"Теперь введи ТГ name студента"
+    text = f"Теперь введите <b>Telegram-ник</b> студента"
     await main_edit_mes(text=text, ikb=keyboard.back_add_menu, call=call)
     async with state.proxy() as data:
         data['prof'] = call.data.split('_')[-1]
@@ -205,11 +210,18 @@ async def list_adding_info(message, state: FSMContext):
         if table == 'students':
             teacher_name, direction = main_get(tables=['teachers'], columns=["name", 'direction'],
                                                condition=f"id = {data['prof']}", is_one=True)
-            text = f"Информация о введённых данных\n\n{rus_name} - {name}\nГруппа - {direction}\nКуратор - {teacher_name}\nТГ ник - {message.text}"
+            text = f"<b>Информация о введённых данных</b>\n\n" \
+                   f"<b>{rus_name}</b> - {name}\n" \
+                   f"<b>Группа</b> - {direction}\n" \
+                   f"<b>Куратор</b> - {teacher_name}\n" \
+                   f"<b>Telegram-ник</b> - {message.text}"
         else:
             direction = data["prof"]
-            text = f"Информация о введённых данных\n\n{rus_name} - {name}\n Направление - {direction}\nТГ ник - {message.text}"
-        data["tg_username_" + table] = message.text
+            text = f"<b>Информация о введённых данных</b>\n\n" \
+                   f"<b>{rus_name}</b> - {name}\n" \
+                   f"<b>Направление</b> - {direction}\n" \
+                   f"<b>Telegram-ник</b> - {message.text}"
+        data["tg_username_" + table] = message.text[1:] if '@' in message.text[0] else message.text
         message_id_call = data["call_message_id_" + table]
         chat_id_call = data["call_chat_id_" + table]
     await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
@@ -239,14 +251,16 @@ async def add_or_back_menu(call, state: FSMContext):
             params = {"name": f"'{name}'", "direction": f"'{direction}'", 'tg_username': f"'{tg_name}'"}
         elif table == "awards":
             rus_name = "Награда"
-            params = {"title": f"'{name}'", "cost": data["cost_" + table], 'description': data["description"]}
+            description = data["description"]
+            params = {"title": f"'{name}'", "cost": data["cost_" + table], 'description': f"'{description}'"}
             name = data["name_" + table] + data["cost_" + table]
         else:
             rus_name = "Задача"
-            params = {"title": f"'{name}'", "reward": data["cost_" + table]}
+            description = data["description"]
+            params = {"title": f"'{name}'", "reward": data["cost_" + table], 'description': f"'{description}'"}
             name = data["name_" + table] + data["cost_" + table]
         add_record(table=table, params=params)
-        await call.answer(f"{rus_name} {name} успешно добавлен\nХотите ещё что-то добавить?")
-    text = random.choice(text_admin.text["add"])
-    await main_edit_mes(text=text, ikb=keyboard.add_menu, call=call)
+        await call.answer(f"Добавлена запись {rus_name}: {name}")
+    cur_text = random.choice(text["add"])
+    await main_edit_mes(text=cur_text, ikb=keyboard.add_menu, call=call)
     await state.finish()

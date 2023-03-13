@@ -6,7 +6,7 @@ kb_main = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton("Добавить ➕", callback_data="add"),
      InlineKeyboardButton("Редактировать 🖋", callback_data="edit")],
     [InlineKeyboardButton("Добавить SkillCoins 💎", callback_data="coins_add"),
-     InlineKeyboardButton("Топ студентов", callback_data="top")]
+     InlineKeyboardButton("Топ студентов 🔥", callback_data="top")]
 ])
 
 back_add_menu_btn = InlineKeyboardButton("🔙 Назад в меню", callback_data="back_menu")
@@ -93,7 +93,7 @@ def create_ikb_info_list(rec_id: int, columns: dict, table: str) -> InlineKeyboa
         if count % 2 == 0:
             ikb.add(prev_btn, btn)
         prev_btn = btn
-    if table == 'teachers':
+    if table != 'students':
         ikb.add(prev_btn)
     if table == "teachers":
         ikb.row(InlineKeyboardButton("🔙 Назад в меню", callback_data="back_menu_edit"))

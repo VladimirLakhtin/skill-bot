@@ -3,7 +3,7 @@ import keyboards.teacher as keyboard
 from state import FSMAddRecord, FSMContext
 from func_bot import *
 from filters import IsTeacher
-from text import text_admin
+from script_text.teacher import text
 from create_bot import dp
 from datetime import date
 import random
@@ -12,7 +12,7 @@ import random
 # Request name of student
 @dp.callback_query_handler(IsTeacher(), text='add_std')
 async def request_name(call, state: FSMContext):
-    text = f"Введите имя и фамилию"
+    text = f"Введите <b>имя и фамилию</b>"
     await main_edit_mes(text=text, ikb=keyboard.back_main_menu, call=call)
     async with state.proxy() as data:
         data["message_id"] = call.message.message_id
@@ -36,7 +36,7 @@ async def request_tg_id_std(message, state: FSMContext):
             pass
         await FSMAddRecord.state_name.set()
     else:
-        text = f"Теперь введи ТГ name студента"
+        text = f"Теперь введите <b>Telegram-ник</b> студента"
         await main_edit_mes(text=text, ikb=keyboard.back_main_menu, message_id=message_id, chat_id=chat_id)
         await FSMAddRecord.state_tg_name.set()
 
@@ -48,10 +48,14 @@ async def list_adding_info(message, state: FSMContext):
         name = data["name"]
         teacher_id, teacher_name, direction = main_get(tables=['teachers'], columns=["id", "name", 'direction'],
                                                        condition=f"tg_id = {message.from_user.id}", is_one=True)
-        text = f"Информация о введённых данных\n\nФИ студента - {name}\nНаправление - {direction}\nКуратор - {teacher_name}\nTg-name - {message.text}"
+        text = f"<b>Информация о введённых данных</b>\n\n" \
+               f"<b>ФИ студента</b> - {name}\n" \
+               f"<b>Направление</b> - {direction}\n" \
+               f"<b>Куратор</b> - {teacher_name}\n" \
+               f"<b>Telegram-ник</b> - {message.text}"
         data["teacher_id"] = teacher_id
         data["direction"] = direction
-        data["tg_username"] = message.text
+        data["tg_username"] = message.text[1:] if '@' in message.text[0] else message.text
         message_id = data['message_id']
         chat_id = data["chat_id"]
     await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
@@ -71,9 +75,5 @@ async def add_or_back_menu(call, state: FSMContext):
         params = {"name": f"'{name}'", "score": 0, "teacher_id": f"'{teacher_id}'", 'tg_username': f"'{tg_name}'"}
         add_record(table='students', params=params)
         await call.answer(f"Студент {name} успешно добавлен")
-        name_teacher, direction = main_get(tables=['teachers'], columns=['name', 'direction'], condition=f'tg_id = {call.from_user.id}', is_one=True)
-        text_teacher = f"Куратор {name_teacher} добавил студента {name}\nTG-{tg_name}\n Профессия - {direction}\n{date.today()}"
-        await bot.send_message(text=text_teacher, chat_id="-1001881010069")
-    text = 'Добро пожаловать в главное меню'
-    await main_edit_mes(text=text, ikb=keyboard.kb_main, call=call)
+    await main_edit_mes(text=text['start'], ikb=keyboard.kb_main, call=call)
     await state.finish()

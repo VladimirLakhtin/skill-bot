@@ -3,10 +3,9 @@ import keyboards.teacher as keyboard
 from state import FSMContext, FSMSeachStudent, FSMTeachers
 from func_bot import *
 from filters import IsTeacher
-from text import text_admin
+from script_text.teacher import text
 from create_bot import dp
 from datetime import date
-
 
 
 
@@ -58,7 +57,7 @@ async def all_student(call, state: FSMContext):
 async def choose_task(call, state: FSMContext):
     async with state.proxy() as data:
         data['std_info'] = call.data.split('_')[2:]
-    task_id, task_titles, cost = main_get(tables=['tasks'])
+    task_id, task_titles, cost, description = main_get(tables=['tasks'])
     ikb = keyboard.tasks_list(task_id, task_titles, cost)
     text = 'Теперь выбери причину начисления:'
     await main_edit_mes(text=text, ikb=ikb, call=call)
@@ -121,9 +120,8 @@ async def choose_task(call, state: FSMContext):
         dates = data["date"]
     await call.answer(f"{cost} SkillCoins зачислено")
     name_teacher = main_get(tables=['teachers'], columns=['name'], condition=f'tg_id = {call.from_user.id}', is_one=True)
-    text_teacher = f"Куоатор {name_teacher} выдал студенту {std_name}\nКол-во SkillCoins - {cost}\nЗа {tasks_name}\n{dates}"
-    await bot.send_message(text=text_teacher, chat_id="-1001881010069")
+    log_text = text['log_add'].format(tch=name_teacher, std=std_name, score=cost, task=tasks_name, date=dates)
+    await bot.send_message(text=log_text, chat_id="-1001881010069")
     add_skillcoins(std_id=std_id, coins=cost)
-    text = f"Главное меню\n{text_admin.text['start']}"
-    await main_edit_mes(text=text, ikb=keyboard.kb_main, call=call)
+    await main_edit_mes(text=text['start'], ikb=keyboard.kb_main, call=call)
     await state.finish()
