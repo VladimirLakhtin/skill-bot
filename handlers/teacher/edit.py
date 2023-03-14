@@ -14,7 +14,7 @@ import random
 @dp.callback_query_handler(IsTeacher(), lambda callback: callback.data.startswith('edit'))
 async def search_student(call, state: FSMContext):
     ikb = keyboard.create_ikb_records_list()
-    text = f"Введите имя или фамилию студента которого хотите найти"
+    text = f"Введите <b>имя или фамилию</b> студента которого хотите найти"
     await main_edit_mes(text=text, ikb=ikb, call=call)
     async with state.proxy() as data:
         data["message_search_id"] = call.message.message_id
@@ -37,7 +37,7 @@ async def search_info_list_student(message, state: FSMContext):
         ikb = keyboard.create_ikb_records_list(records_id, records_name)
         await state.finish()
     else:
-        text = "Сходства не найдены, попробуй еще раз или выведи всех:"
+        text = "<b>Сходства не найдены</b>, попробуйте еще раз или <b>выведите всех</b>:"
         ikb = keyboard.create_ikb_records_list()
         await FSMSeachRecord.search_name_state.set()
     try:
@@ -52,10 +52,29 @@ async def edit_all_records_list(call, state: FSMContext):
     teacher_id = main_get(tables=['teachers'], columns=['id'], condition=f'tg_id = {call.from_user.id}', is_one=True)
     record_id, records_names = main_get(tables=['students'], columns=['id', 'name'],
                                         condition=f'teacher_id = {teacher_id}', sort_by='name')
-    ikb = keyboard.create_ikb_records_list(record_id, records_names, is_all=True)
-    text = f"Все твои студенты SkillBox"
+    step, cur_step = 10, 0
+    ikb = keyboard.create_ikb_records_list(record_id, records_names, step=step, cur_step=cur_step, is_all=True)
+    text = f"Все ваши студенты SkillBox 1 страница"
     await main_edit_mes(text=text, ikb=ikb, call=call)
     await state.finish()
+    async with state.proxy() as data:
+        data["next_inline"] = [record_id, records_names, step, cur_step]
+
+
+# Get next or previous page of students list
+@dp.callback_query_handler(IsTeacher(), lambda callback: callback.data in ["next_inline", "back_inline"], state="*")
+async def next_inline(call, state: FSMContext):
+    async with state.proxy() as data:
+        record_id, records_names, step, cur_step = data["next_inline"]
+    diff = 10 if call.data == "next_inline" else -10
+    step += diff
+    cur_step += diff
+    ikb = keyboard.create_ikb_records_list(record_id, records_names, step=step, cur_step=cur_step, is_all=True)
+    text = f"Все ваши студенты SkillBox {round(step / 10)} страница"
+    await main_edit_mes(text=text, ikb=ikb, call=call)
+    await state.finish()
+    async with state.proxy() as data:
+        data["next_inline"] = [record_id, records_names, step, cur_step]
 
 
 # Show full info about record
@@ -70,12 +89,19 @@ async def edit_record_info(call, state: FSMContext):
         data["id"] = rec_id
 
 
+# Confirm delete student
+@dp.callback_query_handler(IsTeacher(), lambda callback: callback.data.startswith('del_confirm_'))
+async def delete_confirm(call):
+    std_id = call.data.split('_')[-1]
+    await main_edit_mes('Вы уверены, что хотите удалить?', call=call, ikb=keyboard.confirm_delete(std_id))
+
+
 # Request a new feature value
 @dp.callback_query_handler(IsTeacher(), lambda callback: callback.data.startswith("feat_"))
 async def edit_record_feat(call, state: FSMContext):
     _, rec_id, feat_name, feat_name_rus = call.data.split("_")
     ikb = keyboard.create_ikb_back_rec_info(rec_id)
-    text = f"Введите изменение значении {feat_name_rus}"
+    text = f"Введите изменение значении <b>{feat_name_rus}</b>"
     await main_edit_mes(text=text, ikb=ikb, call=call)
     async with state.proxy() as data:
         data["edit_call_message_id"] = call.message.message_id
@@ -103,7 +129,7 @@ async def edit_record(message, state: FSMContext):
     else:
         cur_value = main_get(tables=['students'], columns=[feat_name], condition=f"id = {rec_id}", is_one=True)
         await bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
-        text = f"Вы точно хотите изменить {cur_value} на {message.text}"
+        text = f"Вы точно хотите изменить <b>{cur_value}</b> на <b>{message.text}</b>"
         await main_edit_mes(text=text, ikb=keyboard.accept_and_reject_edit(), message_id=message_id, chat_id=chat_id)
 
 

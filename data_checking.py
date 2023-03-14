@@ -31,12 +31,17 @@ def input_edit(inputs: Any, column: str) -> (bool, str):
     if column in ["reward", "cost", "score"]:
         flag = inputs.isdigit() and int(inputs) >= 0
         text = "Число должно быть <b>положительным</b>" if not flag else ""
-        return flag, text
     elif column == "name":
         flag = len(inputs.split()) == 2
         text = "Необходимо ввести <b>имя и фамилию</b>" if not flag else ""
-        return flag, text
-    return True, None
+    elif column == 'date':
+        flag = (len(inputs) == 10) and \
+                 ([int(len(i)) for i in inputs.split('.')] == [2, 2, 4]) and \
+                 (sum([i.isdigit() for i in inputs.split('.')]) == 3)
+        text = "Необходимо ввести дату в формате <b>ДЕНЬ.МЕСЯЦ.ГОД</b>" if not flag else ""
+    else:
+        return True, None
+    return flag, text
 
 
 def input_data(text_data):

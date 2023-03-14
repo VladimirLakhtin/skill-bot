@@ -9,7 +9,7 @@ from filters import IsTeacher
 async def top_list(call):
     teacher_id = main_get(tables=['teachers'], columns=['id'], condition=f'tg_id = {call.from_user.id}', is_one=True)
     top_student = func_bot.get_top_std(teacher_id)
-    text = '<b>Топ 10 студентов по SkillCoins 🔥</b>\n'
+    text = '<b>Топ 10 Ваших студентов по SkillCoins 🔥</b>\n'
     for i in top_student:
         text += f"\n {i[0]} - {i[1]}"
     await main_edit_mes(text=text, ikb=keyboard.back_main_menu, call=call)

@@ -60,14 +60,13 @@ async def del_record(call, state:FSMContext):
         else:
             rus_name = "задачу"
             colum = "title"
-        remove_record(record_id=record_id, table=table)
         name = main_get(tables=[table], columns=[colum], condition=f'id = {record_id}', is_one=True)
+        remove_record(record_id=record_id, table=table)
         await call.answer(f'Запись {rus_name} {name} удалена')
         remove_record(record_id=record_id, table=table)
 
     await main_edit_mes(text=random.choice(text['edit']), ikb=keyboard.edit_menu, call=call)
     await state.finish()
-
 
 
 # Get list of all tasks of awards to edit
@@ -105,41 +104,31 @@ async def get_record_info_title(call, state: FSMContext):
 # List of all students or teachers to edit
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data.startswith('all_'), state="*")
 async def edit_all_records_list(call, state: FSMContext):
-    table, rus_name, prefix = ['students', 'студенты', 'std'] if call.data == 'all_std' else ['teachers', 'учителя',
-                                                                                              'tch']
-    async with state.proxy() as data:
-        try:
-            step, cur_step = data["step"]
-            if step == 10:
-                cur_step = 0
-        except Exception:
-            step = 10
-            cur_step = 0
+    table, rus_name, prefix = ['students', 'студенты', 'std'] if call.data == 'all_std' else ['teachers', 'учителя', 'tch']
+    step, cur_step = 10, 0
     record_id, records_names = main_get(tables=[table], columns=['id', 'name'], sort_by='name')
-    ikb = keyboard.create_ikb_records_list(record_id, records_names, prefix, option="edit", step=step, cur_step=cur_step, pref=prefix)
-    text = f"Все {rus_name} SkillBox"
+    ikb = keyboard.create_ikb_records_list(record_id, records_names, prefix, option="edit", step=step, cur_step=cur_step)
+    text = f"Все {rus_name} SkillBox 1 страница"
     await main_edit_mes(text=text, ikb=ikb, call=call)
     await state.finish()
     async with state.proxy() as data:
         data["next_inline"] = [record_id, records_names, prefix, step, rus_name, cur_step]
 
 
+# Get next or previous page of students list
 @dp.callback_query_handler(IsAdmin(), lambda callback: callback.data in ["next_inline", "back_inline"], state="*")
-async def next_inline(call, state:FSMContext):
+async def next_inline(call, state: FSMContext):
     async with state.proxy() as data:
         record_id, records_names, prefix, step, rus_name, cur_step = data["next_inline"]
-    cur_step = step
-    if call.data == "next_inline":
-        step += 10
-    else:
-        cur_step -= 20
-        step -= 10
-    ikb = keyboard.create_ikb_records_list(record_id, records_names, prefix, option="edit", step=step,cur_step=cur_step, pref=prefix)
+    diff = 10 if call.data == "next_inline" else -10
+    step += diff
+    cur_step += diff
+    ikb = keyboard.create_ikb_records_list(record_id, records_names, prefix, option="edit",
+                                           step=step, cur_step=cur_step)
     text = f"Все {rus_name} SkillBox {round(step / 10)} страница"
     await main_edit_mes(text=text, ikb=ikb, call=call)
     await state.finish()
     async with state.proxy() as data:
-        data["step"] = step, cur_step
         data["next_inline"] = [record_id, records_names, prefix, step, rus_name, cur_step]
 
 
@@ -164,7 +153,7 @@ async def edit_record_info(call, state: FSMContext):
 async def search_student_teacher_handler(call, state: FSMContext):
     table, rus_text = ['students', "студента"] if call.data == "edit_std" else ['teachers', "куратора"]
     ikb = keyboard.create_ikb_back_edit_menu(call.data.split('_')[-1])
-    text = f"Введите имя или фамилию {rus_text} которого хотите найти 👀"
+    text = f"Введите <b>имя или фамилию {rus_text}</b> которого хотите найти 👀"
     await main_edit_mes(text=text, ikb=ikb, call=call)
     async with state.proxy() as data:
         data["table"] = table

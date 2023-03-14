@@ -34,19 +34,37 @@ def back_edit_menu() -> InlineKeyboardMarkup:
 
 
 # Show result of search or all students
-def create_ikb_records_list(rec_id: List = None, rec_names: List = None, is_all=False,
-                            is_edit=True) -> InlineKeyboardMarkup:
+def create_ikb_records_list(rec_id: List = None, records_names: List = None, is_all=False,
+                            is_edit: bool = True, step: int = None, cur_step: int = None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
-    if rec_id or rec_names:
-        for i, name in zip(rec_id, rec_names):
-            cb_data = f'std_{i}' if is_edit else f'choose_std_{i}_{name}'
-            ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=cb_data))
+    if rec_id or records_names:
+        if step:
+            # Get records slice
+            step_rec_name = records_names[cur_step:step:]
+            rec_id = rec_id[cur_step:step:]
+            # Create records list
+            for i, name in enumerate(step_rec_name):
+                cd_data = f'std_{rec_id[i]}' if is_edit else f'choose_std_{rec_id[i]}_{name}'
+                ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=cd_data))
+            # Create page control buttons
+            if cur_step == 0 and len(records_names) > step:
+                ikb.add(InlineKeyboardButton("➡", callback_data="next_inline" if is_edit else "next_inline_coins"))
+            elif len(records_names) > step:
+                ikb.add(InlineKeyboardButton("⬅", callback_data="back_inline" if is_edit else "back_inline_coins"),
+                        InlineKeyboardButton("➡", callback_data="next_inline" if is_edit else "next_inline_coins"))
+            elif cur_step != 0 and len(records_names) <= step:
+                ikb.add(InlineKeyboardButton("⬅", callback_data="back_inline" if is_edit else "back_inline_coins"))
+        else:
+            # Create records list
+            for i, name in zip(rec_id, records_names):
+                cb_data = f'std_{i}' if is_edit else f'choose_std_{i}_{name}'
+                ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=cb_data))
     if is_all:
-        ikb.add(InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
+        ikb.add(InlineKeyboardButton("🔙 Главное меню", callback_data="back_main_menu"))
     else:
         cb_data = 'all' if is_edit else 'allstd4tch'
         ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data=cb_data),
-                InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu"))
+                InlineKeyboardButton("🔙 Главное меню", callback_data="back_main_menu"))
     return ikb
 
 
@@ -56,10 +74,18 @@ def create_ikb_info_list(rec_id: int) -> InlineKeyboardMarkup:
         [InlineKeyboardButton('Имя', callback_data=f"feat_{rec_id}_name_Имя"),
          InlineKeyboardButton('User name', callback_data=f"feat_{rec_id}_tg-username_User-name")],
         [InlineKeyboardButton('SkillCoins', callback_data=f"feat_{rec_id}_score_SkillCoins")],
-        [InlineKeyboardButton("Удалить 🗑", callback_data="del"),
-         InlineKeyboardButton("🔙 Назад в меню", callback_data="back_main_menu")]
+        [InlineKeyboardButton("Удалить 🗑", callback_data=f"del_confirm_{rec_id}"),
+         InlineKeyboardButton("🔙 Назад", callback_data="edit_std")]
     ])
     return ikb
+
+
+# Confirm delete student
+def confirm_delete(std_id) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton("🗑 Удалить 🗑", callback_data="del"),
+         InlineKeyboardButton("❌ Отмена ❌", callback_data=f"std_{std_id}")]
+    ])
 
 
 # Back to student info
@@ -79,28 +105,22 @@ def accept_and_reject_edit() -> InlineKeyboardMarkup:
 
 # Add SkillCoins
 
-# Show all teacher's students
-def students_list(rec_id: int = None, rec_names: str = None, is_all: bool = False) -> InlineKeyboardMarkup:
-    ikb = InlineKeyboardMarkup()
-    if rec_id and rec_names:
-        for i, name in zip(rec_id, rec_names):
-            ikb.add(InlineKeyboardButton(name, callback_data=f'choose_std_{i}_{name}'))
-    if is_all:
-        ikb.add(InlineKeyboardButton("🔙 Назад", callback_data='back_main_menu'))
-    else:
-        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data='allstd4tch'),
-                InlineKeyboardButton("🔙 Назад в меню", callback_data='back_main_menu'))
-    return ikb
-
-
 # Show tasks list to add SkillCoins
 def tasks_list(rec_id: int = None, rec_title: str = None, rec_cost: int = None) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     if rec_id and rec_title and rec_cost:
         for i, title, cost in zip(rec_id, rec_title, rec_cost):
             ikb.add(InlineKeyboardButton(title, callback_data=f'choose_task_{i}_{title}_{cost}'))
-    ikb.add(InlineKeyboardButton("🔙 Назад", callback_data='back_main_menu'))
+    ikb.add(InlineKeyboardButton("🔙 Назад", callback_data='coins_add'))
     return ikb
+
+
+# Request an adding date
+def set_date():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton("Оставить сегодняшнюю", callback_data="old"),
+         InlineKeyboardButton("Задать другую", callback_data="new")],
+    ])
 
 
 # Confirm
@@ -110,8 +130,3 @@ def accept_add_coins() -> InlineKeyboardMarkup:
          InlineKeyboardButton("❌ Отмена ❌", callback_data="back_main_menu")],
     ])
 
-def set_the_day():
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("Оставить текущий", callback_data="old"),
-         InlineKeyboardButton("Задать новый", callback_data="new")],
-    ])

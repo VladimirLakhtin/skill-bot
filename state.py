@@ -1,6 +1,7 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
+
 class FSMAddRecord(StatesGroup):
     state_name = State()
     state_yes_and_no = State()
