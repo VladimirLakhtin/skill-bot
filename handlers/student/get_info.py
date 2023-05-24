@@ -30,7 +30,7 @@ async def ways_to_earn(call):
 async def get_task_info(call, callback_data: dict):
     description = main_get(tables=['tasks'], columns=['description'],
                            condition=f"id = {callback_data['id']}", is_one=True)
-    cur_text = f"<b>{callback_data['title']}</b>\n" + description
+    cur_text = f"<b>{callback_data['title']}</b>\n\n{description}"
     await main_edit_mes(text=cur_text,
                         ikb=keyboard.back_tasks_list(),
                         call=call)

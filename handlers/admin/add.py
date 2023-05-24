@@ -25,9 +25,9 @@ async def add_menu(call, state: FSMContext):
 async def request_name(call, state: FSMContext):
     table = call.data.split('_')[-1]
     if table == "students":
-        rus_name, next_state = ['имя студента', FSMAddRecord.state_name]
+        rus_name, next_state = ['фамилию и имя студента', FSMAddRecord.state_name]
     elif table == "teachers":
-        rus_name, next_state = ['имя куратора', FSMAddRecord.state_name]
+        rus_name, next_state = ['фамилию и имя куратора', FSMAddRecord.state_name]
     elif table == "awards":
         rus_name, next_state = ['название награды', FSMAddRecord.state_title]
     else:

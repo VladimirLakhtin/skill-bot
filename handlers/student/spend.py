@@ -17,9 +17,7 @@ async def ways_to_spend(call):
 # Get info about award. Accept or reject purchase
 @dp.callback_query_handler(IsStudent(), keyboard.cd_spend.filter())
 async def purchase_confirmation(call, callback_data: dict):
-    description = main_get(tables=['awards'], columns=['description'],
-                           condition=f"id = {callback_data['id']}", is_one=True)
-    cur_text = f"<b>{callback_data['title']}</b>\n" + description
+    cur_text = f"Вы точно хотите купить <b>{callback_data['title']}</b>?"
     await main_edit_mes(text=cur_text,
                         ikb=keyboard.get_confirmation(callback_data['id'], callback_data['title'], callback_data['cost']),
                         call=call)

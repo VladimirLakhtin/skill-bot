@@ -135,7 +135,7 @@ async def days(message, state:FSMContext):
                                 f'\n<b>{std_name}</b> за {info.split("_")[3]} - <b>{info.split("_")[4]}</b> SkillCoins'
                                 f'\n<b>{message.text}</b>?',
                                 message_id=message_id, chat_id=chat_id, ikb=keyboard.accept_add_coins())
-            data["date"] = text
+            data["date"] = message.text
             await FSMTeachers.next()
 
 
@@ -146,10 +146,11 @@ async def choose_task(call, state: FSMContext):
         std_id, std_name = data['std_info']
         _, tasks_name, cost = data['task_info']
         dates = data["date"]
+        print(dates)
     await call.answer(f"{cost} SkillCoins зачислено")
     name_teacher = main_get(tables=['teachers'], columns=['name'], condition=f'tg_id = {call.from_user.id}', is_one=True)
     log_text = text['log_add'].format(tch=name_teacher, std=std_name, score=cost, task=tasks_name, date=dates)
-    await bot.send_message(text=log_text, chat_id="-1001881010069")
+    await bot.send_message(text=log_text, chat_id="-1001881010069", parse_mode='html')
     add_skillcoins(std_id=std_id, coins=cost)
     await main_edit_mes(text=text['start'], ikb=keyboard.kb_main, call=call)
     await state.finish()

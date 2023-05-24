@@ -98,21 +98,21 @@ def get_info_list(record_id: str, table: str) -> (str, Dict[str, str]):
         is_one=True
     )
     if table == 'students':
-        text_info = f"<b>Имя</b> - {list_info[1]}\n" \
-                    f"<b>Профессия</b> - {list_info[2]}\n" \
-                    f"<b>User-name</b> - {list_info[3]}\n" \
-                    f"<b>SkillCoins</b> - {list_info[4]}\n" \
-                    f"<b>Куратор</b> - {list_info[5]}"
+        text_info = f"<b>Имя</b>: {list_info[1]}\n" \
+                    f"<b>Профессия</b>: {list_info[2]}\n" \
+                    f"<b>User-name</b>: {list_info[3]}\n" \
+                    f"<b>SkillCoins</b>: {list_info[4]}\n" \
+                    f"<b>Куратор</b>: {list_info[5]}"
         columns = [col.split('.')[-1] for col in columns]
     elif table == 'teachers':
         text_info = f"<b>Имя</b> - {list_info[1]}\n" \
-                    f"<b>Профессия</b> - {list_info[2]}\n" \
-                    f"<b>User-name</b> - {list_info[3]}"
+                    f"<b>Профессия</b>: {list_info[2]}\n" \
+                    f"<b>User-name</b>: {list_info[3]}"
     elif table == 'awards' or table == 'tasks':
         title = "Цена" if table == "awards" else "Награда"
-        text_info = f"<b>Название</b> - {list_info[1]}\n" \
-                    f"<b>Описание</b> - {list_info[3]}\n" \
-                    f"<b>{title}</b>: {list_info[2]} SkillCoins"
+        text_info = f"<b>Название</b>: {list_info[1]}\n" \
+                    f"<b>{title}</b>: {list_info[2]} SkillCoins\n" \
+                    f"<b>Описание</b>: {list_info[3]}"
     elif table == "admins":
         text_info = f"Информация об админе\n<b>Имя</b>: {list_info[1]}\n<b>TG-ID</b>: {list_info[2]}"
     columns = {key.replace('_', '-'): val for (key, val) in translate.items() if key in columns}

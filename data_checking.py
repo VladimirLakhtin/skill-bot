@@ -2,7 +2,6 @@ from typing import List, Any
 import datetime
 
 
-
 def cheak_input_text(name, key):
         layout = dict(zip(map(ord, "qwertyuiop[]asdfghjkl;'zxcvbnm,./`"
                                    'QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?~'),
