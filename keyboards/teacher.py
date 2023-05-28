@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
@@ -35,7 +35,7 @@ def back_edit_menu() -> InlineKeyboardMarkup:
 
 # Show result of search or all students
 def create_ikb_records_list(rec_id: List = None, records_names: List = None, is_all=False,
-                            is_edit: bool = True, step: int = None, cur_step: int = None) -> InlineKeyboardMarkup:
+                            is_edit: bool = True, step: int = None, cur_step: int = None, std_choice: Dict = {}) -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup()
     if rec_id or records_names:
         if step:
@@ -45,26 +45,35 @@ def create_ikb_records_list(rec_id: List = None, records_names: List = None, is_
             # Create records list
             for i, name in enumerate(step_rec_name):
                 cd_data = f'std_{rec_id[i]}' if is_edit else f'choose_std_{rec_id[i]}_{name}'
-                ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=cd_data))
+                ikb.add(InlineKeyboardButton(name + ' ✅' if rec_id[i] in std_choice else name, callback_data=cd_data))
             # Create page control buttons
+            next = InlineKeyboardButton("➡", callback_data='next_inline' if is_edit else 'next_inline_coins')
+            back = InlineKeyboardButton("⬅", callback_data='back_inline' if is_edit else 'back_inline_coins')
             if cur_step == 0 and len(records_names) > step:
-                ikb.add(InlineKeyboardButton("➡", callback_data="next_inline" if is_edit else "next_inline_coins"))
+                ikb.add(next)
             elif len(records_names) > step:
-                ikb.add(InlineKeyboardButton("⬅", callback_data="back_inline" if is_edit else "back_inline_coins"),
-                        InlineKeyboardButton("➡", callback_data="next_inline" if is_edit else "next_inline_coins"))
+                ikb.add(back, next)
             elif cur_step != 0 and len(records_names) <= step:
-                ikb.add(InlineKeyboardButton("⬅", callback_data="back_inline" if is_edit else "back_inline_coins"))
+                ikb.add(back)
+            if not is_edit:
+                ikb.add(InlineKeyboardButton("Добавить", callback_data='submit_std_list'),
+                        InlineKeyboardButton("🔙 Главное меню", callback_data="back_main_menu"))
         else:
             # Create records list
             for i, name in zip(rec_id, records_names):
                 cb_data = f'std_{i}' if is_edit else f'choose_std_{i}_{name}'
-                ikb.add(InlineKeyboardButton(name + " 🪪", callback_data=cb_data))
+                ikb.add(InlineKeyboardButton(name + ' ✅' if i in std_choice else name, callback_data=cb_data))
     if is_all:
-        ikb.add(InlineKeyboardButton("🔙 Главное меню", callback_data="back_main_menu"))
+        if is_edit:
+            ikb.add(InlineKeyboardButton("🔙 Главное меню", callback_data="back_main_menu"))
     else:
-        cb_data = 'all' if is_edit else 'allstd4tch'
-        ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data=cb_data),
-                InlineKeyboardButton("🔙 Главное меню", callback_data="back_main_menu"))
+        if is_edit:
+            ikb.row(InlineKeyboardButton("Показать всех 🔍", callback_data='all'),
+                    InlineKeyboardButton("🔙 Главное меню", callback_data="back_main_menu"))
+        else:
+            ikb.row(InlineKeyboardButton("Добавить", callback_data='submit_std_list'),
+                    InlineKeyboardButton("🔙 Назад", callback_data='back_main_menu'))
+            ikb.add(InlineKeyboardButton("Показать всех 🔍", callback_data='allstd4tch'))
     return ikb
 
 
